@@ -1,0 +1,4 @@
+*/obj/*
+*.so
+*.jar
+libil2cpp

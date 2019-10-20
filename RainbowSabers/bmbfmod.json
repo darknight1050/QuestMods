@@ -1,0 +1,25 @@
+{
+	"id": "RainbowSabers",
+	"name": "RainbowSabers",
+	"author": "darknight1050",
+	"description": [
+		"RainbowSabers"
+	],
+	"category": "Other",
+	"gameVersion": "1.4.3",
+	"version": "0.0.1",
+	"links": {
+		"project-home": ""
+	},
+	"platform": "Quest",
+	"components": [{
+			"Type": "HookMod",
+			"InstallAction": {
+				"InstallLibraryFile": "librainbowsabers.so"
+			},
+			"UninstallAction": {
+				"RemoveLibraryFile": "librainbowsabers.so"
+			}
+		}
+	]
+}

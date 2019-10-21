@@ -43,11 +43,11 @@ typedef struct {
 	char pad[0x10];
 	char colorSchemeId[8];
   	char colorSchemeName[8];
-    int isEditable;
-    Color saberAColor;
-    Color saberBColor;
-    Color environmentColor0;
-    Color environmentColor1;
+	int isEditable;
+	Color saberAColor;
+	Color saberBColor;
+	Color environmentColor0;
+	Color environmentColor1;
 	Color obstaclesColor;
 } ColorScheme;
 
@@ -74,16 +74,16 @@ Color ColorFromHSB(float hue, float saturation, float brightness){
 	{
 		float h = (hue - (float)floor (hue)) * 6.0f;
 		float f = h - (float)floor (h);
-        float p = brightness * (1.0f - saturation);
-        float q = brightness * (1.0f - saturation * f);
-        float t = brightness * (1.0f - (saturation * (1.0f - f)));
+		float p = brightness * (1.0f - saturation);
+		float q = brightness * (1.0f - saturation * f);
+		float t = brightness * (1.0f - (saturation * (1.0f - f)));
 		switch ((int)h)
-        {
+		{
 			case 0:
 				r = (int)(brightness * 255.0f + 0.5f);
 				g = (int)(t * 255.0f + 0.5f);
-                b = (int)(p * 255.0f + 0.5f);
-                break;
+				b = (int)(p * 255.0f + 0.5f);
+				break;
 			case 1:
 				r = (int)(q * 255.0f + 0.5f);
 				g = (int)(brightness * 255.0f + 0.5f);
@@ -110,7 +110,7 @@ Color ColorFromHSB(float hue, float saturation, float brightness){
 				b = (int)(q * 255.0f + 0.5f);
 				break;
 		}
-    }
+	}
 	Color color;
 	color.r = r/255.0f;
 	color.g = g/255.0f;
@@ -307,8 +307,8 @@ void createDefaultConfig() {
 	config_doc.AddMember("LightASpeed", Config.LightASpeed, config_doc.GetAllocator());
 	config_doc.AddMember("LightBSpeed", Config.LightBSpeed, config_doc.GetAllocator());
 	config_doc.AddMember("LightsStartDiff", Config.LightsStartDiff, config_doc.GetAllocator());
-    config_doc.AddMember("WallsSpeed", Config.WallsSpeed, config_doc.GetAllocator());
-    Configuration::Write();
+	config_doc.AddMember("WallsSpeed", Config.WallsSpeed, config_doc.GetAllocator());
+	Configuration::Write();
 	log(INFO, "Created Configuration!");
 }
 
@@ -345,8 +345,8 @@ __attribute__((constructor)) void lib_main()
 {
 	Init();
 	#ifdef __aarch64__
-    log(INFO, "Is 64 bit!");
-    #endif
+	log(INFO, "Is 64 bit!");
+	#endif
 
 	if(!loadConfig())
 		createDefaultConfig();

@@ -51,6 +51,9 @@ typedef struct {
 	Color obstaclesColor;
 } ColorScheme;
 
+
+static bool hookInit = false;
+
 ColorScheme colorScheme;
 
 static float saberA = 0;
@@ -59,6 +62,7 @@ static float environmentColor0 = 0;
 static float environmentColor1 = 0;
 static float obstaclesColor = 0;
 static bool InTutorial = false; 
+
 Color ColorFromHSB(float hue, float saturation, float brightness){
 	hue/=360.0f;
 	int r = 0, g = 0, b = 0;
@@ -107,7 +111,7 @@ Color ColorFromHSB(float hue, float saturation, float brightness){
 				break;
 		}
     }
-    Color color;
+	Color color;
 	color.r = r/255.0f;
 	color.g = g/255.0f;
 	color.b = b/255.0f;
@@ -119,6 +123,16 @@ Color getColorFromManager(Il2CppObject* colorManager, const char* fieldName){
 	Color color;
 	GetFieldValue(&color, GetFieldObjectValue(colorManager, fieldName), "_color");
 	return color; 
+}
+
+MAKE_HOOK_OFFSETLESS(TutorialController_Awake, void, Il2CppObject* self){
+	TutorialController_Awake(self);
+	InTutorial = true;
+}
+
+MAKE_HOOK_OFFSETLESS(TutorialController_OnDestroy, void, Il2CppObject* self){
+	TutorialController_OnDestroy(self);
+	InTutorial = false;
 }
 
 MAKE_HOOK_OFFSETLESS(SaberBurnMarkSparkles_LateUpdate, void, Il2CppObject* self, void *type){
@@ -181,31 +195,94 @@ MAKE_HOOK_OFFSETLESS(GameNoteController_Update, void, Il2CppObject* self){
 	Il2CppObject* disappearingArrowController = GetFieldObjectValue(self, "_disappearingArrowController");
 	Il2CppObject* colorNoteVisuals = GetFieldObjectValue(disappearingArrowController, "_colorNoteVisuals");
 	Il2CppObject* noteController = GetFieldObjectValue(colorNoteVisuals, "_noteController");
-	RunMethod(colorNoteVisuals, "HandleNoteControllerDidInitEvent", noteController);
+	
+	Il2CppObject* noteData = GetFieldObjectValue(noteController, "_noteData");
+
+	int noteType;
+	RunMethod(&noteType, noteData, "get_noteType"); 
+	Color noteColor = noteType == 1 ? colorScheme.saberBColor : colorScheme.saberAColor;
+	SetFieldValue(colorNoteVisuals, "_noteColor", &noteColor); 
+	
+	float arrowGlowIntensity;
+	GetFieldValue(&arrowGlowIntensity, colorNoteVisuals, "_arrowGlowIntensity");
+	Color arrowGlowSpriteRendererColor = noteColor;
+	arrowGlowSpriteRendererColor.a = arrowGlowIntensity;
+	Il2CppObject* arrowGlowSpriteRenderer = GetFieldObjectValue(colorNoteVisuals, "_arrowGlowSpriteRenderer");
+	RunMethod(arrowGlowSpriteRenderer, "set_color", &arrowGlowSpriteRendererColor); 
+	Il2CppObject* circleGlowSpriteRenderer = GetFieldObjectValue(colorNoteVisuals, "_circleGlowSpriteRenderer");
+	RunMethod(circleGlowSpriteRenderer, "set_color", &noteColor); 
+	Array<Il2CppObject*>* materialPropertyBlockControllers = reinterpret_cast<Array<Il2CppObject*>*>(GetFieldObjectValue(colorNoteVisuals, "_materialPropertyBlockControllers"));
+	
+	for(int i = 0;i<materialPropertyBlockControllers->Length();i++){
+		Il2CppObject* materialPropertyBlockController = materialPropertyBlockControllers->values[i];
+		Il2CppObject* materialPropertyBlock;
+		RunMethod(&materialPropertyBlock, materialPropertyBlockController, "get_materialPropertyBlock"); 
+		Color materialPropertyBlockColor = noteColor;
+		materialPropertyBlockColor.a = 1.0f;
+		RunMethod(materialPropertyBlock, "SetColor", createcsstr("_Color"), &materialPropertyBlockColor);
+		RunMethod(materialPropertyBlockController, "ApplyChanges");
+	}
 	GameNoteController_Update(self);
 }
 
 MAKE_HOOK_OFFSETLESS(ObstacleController_Update, void, Il2CppObject* self){
 	Init();
 	Il2CppObject* stretchableObstacle = GetFieldObjectValue(self, "_stretchableObstacle");
+	float addColorMultiplier;
+	GetFieldValue(&addColorMultiplier, stretchableObstacle, "_addColorMultiplier");
+
+	Color color = colorScheme.obstaclesColor;
+	Color color2 = color;
+	color2.r *= addColorMultiplier;
+	color2.g *= addColorMultiplier;
+	color2.b *= addColorMultiplier;
+	color2.a = 0.0f;
+
 	Il2CppObject* obstacleFrame = GetFieldObjectValue(stretchableObstacle, "_obstacleFrame");
+	SetFieldValue(obstacleFrame, "color", &color); 
+	RunMethod(obstacleFrame, "Refresh");
+	Il2CppObject* obstacleFakeGlow = GetFieldObjectValue(stretchableObstacle, "_obstacleFakeGlow");
+	SetFieldValue(obstacleFakeGlow, "color", &color); 
+	RunMethod(obstacleFakeGlow, "Refresh");
+
+	Array<Il2CppObject*>* addColorSetters = reinterpret_cast<Array<Il2CppObject*>*>(GetFieldObjectValue(stretchableObstacle, "_addColorSetters"));
+	for(int i = 0;i<addColorSetters->Length();i++){
+		RunMethod(addColorSetters->values[i], "SetColor", &color2);
+	}
+
+	Array<Il2CppObject*>* tintColorSetters = reinterpret_cast<Array<Il2CppObject*>*>(GetFieldObjectValue(stretchableObstacle, "_tintColorSetters"));
+	for(int i = 0;i<tintColorSetters->Length();i++){
+		RunMethod(tintColorSetters->values[i], "SetColor", &color);
+	}
 	
-	float width, height, length;
-	GetFieldValue(&width, obstacleFrame, "width");
-	GetFieldValue(&height, obstacleFrame, "height");
-	GetFieldValue(&length, obstacleFrame, "length");
-	RunMethod(stretchableObstacle, "SetSizeAndColor", &width, &height, &length, &colorScheme.obstaclesColor);
 	ObstacleController_Update(self);
 }
 
-MAKE_HOOK_OFFSETLESS(TutorialController_Awake, void, Il2CppObject* self){
-	TutorialController_Awake(self);
-	InTutorial = true;
-}
+MAKE_HOOK_OFFSETLESS(InitHooks, void*, void* arg1, void* arg2, void* arg3){
+	if(!hookInit){
+		Il2CppClass* saberBurnMarkSparklesClass = GetClassFromName("", "SaberBurnMarkSparkles");
+		const MethodInfo* saberBurnMarkSparkles_LateUpdateMethod = class_get_method_from_name(saberBurnMarkSparklesClass, "LateUpdate", 0);
+		INSTALL_HOOK_OFFSETLESS(SaberBurnMarkSparkles_LateUpdate, saberBurnMarkSparkles_LateUpdateMethod);
+		
+		Il2CppClass* tutorialControllerClass = GetClassFromName("", "TutorialController");
+		const MethodInfo* tutorialController_AwakeMethod = class_get_method_from_name(tutorialControllerClass, "Awake", 0);
+		const MethodInfo* tutorialController_OnDestroyMethod = class_get_method_from_name(tutorialControllerClass, "OnDestroy", 0);
+		INSTALL_HOOK_OFFSETLESS(TutorialController_Awake, tutorialController_AwakeMethod);
+		INSTALL_HOOK_OFFSETLESS(TutorialController_OnDestroy, tutorialController_OnDestroyMethod);
 
-MAKE_HOOK_OFFSETLESS(TutorialController_OnDestroy, void, Il2CppObject* self){
-	TutorialController_OnDestroy(self);
-	InTutorial = false;
+		if(Config.SabersActive){
+			Il2CppClass* gameNoteControllerClass = GetClassFromName("", "GameNoteController");
+			const MethodInfo* gameNoteController_UpdateMethod = class_get_method_from_name(gameNoteControllerClass, "Update", 0);
+			INSTALL_HOOK_OFFSETLESS(GameNoteController_Update, gameNoteController_UpdateMethod);
+		}
+		if(Config.WallsActive){
+			Il2CppClass* obstacleControllerClass = GetClassFromName("", "ObstacleController");
+			const MethodInfo* obstacleController_UpdateMethod = class_get_method_from_name(obstacleControllerClass, "Update", 0);
+			INSTALL_HOOK_OFFSETLESS(ObstacleController_Update, obstacleController_UpdateMethod);
+		}
+		hookInit = true;
+	}
+	return InitHooks(arg1, arg2, arg3);
 }
 
 void createDefaultConfig() {
@@ -264,50 +341,26 @@ bool loadConfig() {
 	return false;
 }
 
-static bool hookInit = false;
-
-MAKE_HOOK_OFFSETLESS(InitHooks, void*, void* arg1, void* arg2, void* arg3){
-	if(!hookInit){
-		Il2CppClass* saberBurnMarkSparklesClass = GetClassFromName("", "SaberBurnMarkSparkles");
-		const MethodInfo* saberBurnMarkSparkles_LateUpdateMethod = class_get_method_from_name(saberBurnMarkSparklesClass, "LateUpdate", 0);
-		INSTALL_HOOK_OFFSETLESS(SaberBurnMarkSparkles_LateUpdate, saberBurnMarkSparkles_LateUpdateMethod);
-		
-		Il2CppClass* tutorialControllerClass = GetClassFromName("", "TutorialController");
-		const MethodInfo* tutorialController_AwakeMethod = class_get_method_from_name(tutorialControllerClass, "Awake", 0);
-		const MethodInfo* tutorialController_OnDestroyMethod = class_get_method_from_name(tutorialControllerClass, "OnDestroy", 0);
-		INSTALL_HOOK_OFFSETLESS(TutorialController_Awake, tutorialController_AwakeMethod);
-		INSTALL_HOOK_OFFSETLESS(TutorialController_OnDestroy, tutorialController_OnDestroyMethod);
-
-		if(Config.SabersActive){
-			Il2CppClass* gameNoteControllerClass = GetClassFromName("", "GameNoteController");
-			const MethodInfo* gameNoteController_UpdateMethod = class_get_method_from_name(gameNoteControllerClass, "Update", 0);
-			INSTALL_HOOK_OFFSETLESS(GameNoteController_Update, gameNoteController_UpdateMethod);
-		}
-		if(Config.WallsActive){
-			Il2CppClass* obstacleControllerClass = GetClassFromName("", "ObstacleController");
-			const MethodInfo* obstacleController_UpdateMethod = class_get_method_from_name(obstacleControllerClass, "Update", 0);
-			INSTALL_HOOK_OFFSETLESS(ObstacleController_Update, obstacleController_UpdateMethod);
-		}
-		hookInit = true;
-	}
-	return InitHooks(arg1, arg2, arg3);
-}
-
 __attribute__((constructor)) void lib_main()
 {
-   	Init();
+	Init();
 	#ifdef __aarch64__
     log(INFO, "Is 64 bit!");
     #endif
-	
-	uintptr_t base = baseAddr("/data/app/com.beatgames.beatsaber-1/lib/arm64/libunity.so");
-	uintptr_t hookAddr = FindPattern(base, 0x1000000, "ff 83 01 d1 f8 13 00 f9 f7 5b 03 a9 f5 53 04 a9 f3 7b 05 a9 f4 03 02 aa f5 03 01 aa f6 03 00 aa");
-	if(hookAddr)
-		INSTALL_HOOK_DIRECT(InitHooks, hookAddr);
-	
+
 	if(!loadConfig())
-		 createDefaultConfig();
+		createDefaultConfig();
+
 	saberB = Config.SabersStartDiff;
 	environmentColor1 = Config.LightsStartDiff;
-    log(DEBUG, "Successfully installed RainbowSabers!");
+
+	uintptr_t base = baseAddr("/data/app/com.beatgames.beatsaber-1/lib/arm64/libunity.so");
+	uintptr_t hookAddr = FindPattern(base, 0x1000000, "ff 83 01 d1 f8 13 00 f9 f7 5b 03 a9 f5 53 04 a9 f3 7b 05 a9 f4 03 02 aa f5 03 01 aa f6 03 00 aa");
+	if(hookAddr){
+		INSTALL_HOOK_DIRECT(InitHooks, hookAddr);
+		log(INFO, "Successfully installed RainbowSabers!");
+	}else{
+  		log(ERROR, "Couldn't find Method in libunity.so!");
+	}
+  
 }

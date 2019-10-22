@@ -15,9 +15,6 @@
 
 #define LOG_LEVEL CRITICAL | ERROR | WARNING | INFO | DEBUG
 
-#define MOD_ID "RainbowSabers"
-#define VERSION "0.0.2"
-
 #include "../beatsaber-hook/shared/utils/utils.h"
 #include "../beatsaber-hook/shared/utils/typedefs.h"
 

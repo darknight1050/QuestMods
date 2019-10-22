@@ -10,6 +10,9 @@
 #include <linux/limits.h>
 #include <sys/sendfile.h>
 #include <sys/stat.h>
+#include <map>
+#include <vector>
+#include <thread>
 
 #include "../beatsaber-hook/shared/inline-hook/inlineHook.h"
 
@@ -20,6 +23,7 @@
 
 using namespace il2cpp_utils;
 using namespace il2cpp_functions;
+using namespace std;
 
 static auto& config_doc = Configuration::config;
 
@@ -149,59 +153,79 @@ MAKE_HOOK_OFFSETLESS(TutorialController_OnDestroy, void, Il2CppObject* self){
 	InTutorial = false;
 }
 
-void SetSaberColor(Il2CppObject* saber, Color color){
-	bool getInactive = false;
-	Il2CppString* glowString = createcsstr("_Glow");
-	Il2CppString* bloomString = createcsstr("_Bloom");
-	Il2CppString* colorString = createcsstr("_Color");
-	Il2CppClass* shaderClass = GetClassFromName("UnityEngine", "Shader");
-	const MethodInfo* shader_PropertyToIDMethod = class_get_method_from_name(shaderClass, "PropertyToID", 1);
-	int glowID, bloomID;
-	RunMethod(&glowID, nullptr, shader_PropertyToIDMethod, glowString);
-	RunMethod(&bloomID, nullptr, shader_PropertyToIDMethod, bloomString);
-	int saberType;
-	RunMethod(&saberType, saber, "get_saberType");
-	Array<Il2CppObject*>* childTransforms;
-	RunMethod(&childTransforms, saber, "GetComponentsInChildren", type_get_object(class_get_type(GetClassFromName("UnityEngine", "Transform"))), &getInactive);
-	for (int i= 0; i< childTransforms->Length(); i++)
-	{
-		Array<Il2CppObject*>* renderers;
-		RunMethod(&renderers, childTransforms->values[i], "GetComponentsInChildren", type_get_object(class_get_type(GetClassFromName("UnityEngine", "Renderer"))), &getInactive);
-		for (int j = 0; j < renderers->Length(); j++)
- 		{
-			Array<Il2CppObject*>* sharedMaterials;
-			RunMethod(&sharedMaterials, renderers->values[j], "get_sharedMaterials");
-			for (int h= 0; h < sharedMaterials->Length(); h++)
+static map<Il2CppObject*, vector<Il2CppObject*>> sabersMaterials; 
+
+void CacheSaber(Il2CppObject* saber){
+	if(!InTutorial){
+		if(Config.QSabersActive){
+			vector<Il2CppObject*> materials; 
+			bool getInactive = false;
+			Il2CppString* glowString = createcsstr("_Glow");
+			Il2CppString* bloomString = createcsstr("_Bloom");
+			Il2CppClass* shaderClass = GetClassFromName("UnityEngine", "Shader");
+			const MethodInfo* shader_PropertyToIDMethod = class_get_method_from_name(shaderClass, "PropertyToID", 1);
+			int glowID, bloomID;
+			RunMethod(&glowID, nullptr, shader_PropertyToIDMethod, glowString);
+			RunMethod(&bloomID, nullptr, shader_PropertyToIDMethod, bloomString);
+			Array<Il2CppObject*>* childTransforms;
+			RunMethod(&childTransforms, saber, "GetComponentsInChildren", type_get_object(class_get_type(GetClassFromName("UnityEngine", "Transform"))), &getInactive);
+			for (int i= 0; i< childTransforms->Length(); i++)
 			{
-				Il2CppObject* material = sharedMaterials->values[h];
-				bool setColor = false;
-				int hasGlow;
-				RunMethod(&hasGlow, material, "HasProperty", &glowID);
-				if (hasGlow)
+				Array<Il2CppObject*>* renderers;
+				RunMethod(&renderers, childTransforms->values[i], "GetComponentsInChildren", type_get_object(class_get_type(GetClassFromName("UnityEngine", "Renderer"))), &getInactive);
+				for (int j = 0; j < renderers->Length(); j++)
 				{
-					float glowFloat;
-					RunMethod(&glowFloat, material, "GetFloat", &glowID);
-					if (glowFloat > 0)
-						setColor = true;
-				}
-				if (!setColor)
-				{
-					int hasBloom;
-					RunMethod(&hasBloom, material, "HasProperty", &bloomID);
-					if (hasBloom)
+					Array<Il2CppObject*>* sharedMaterials;
+					RunMethod(&sharedMaterials, renderers->values[j], "get_sharedMaterials");
+					for (int h = 0; h < sharedMaterials->Length(); h++)
 					{
-						float bloomFloat;
-						RunMethod(&bloomFloat, material, "GetFloat", &bloomID);
-						if (bloomFloat > 0)
-						setColor = true;
+						Il2CppObject* material = sharedMaterials->values[h];
+						bool setColor = false;
+						int hasGlow;
+						RunMethod(&hasGlow, material, "HasProperty", &glowID);
+						if (hasGlow)
+						{
+							float glowFloat;
+							RunMethod(&glowFloat, material, "GetFloat", &glowID);
+							if (glowFloat > 0)
+								setColor = true;
+						}
+						if (!setColor)
+						{
+							int hasBloom;
+							RunMethod(&hasBloom, material, "HasProperty", &bloomID);
+							if (hasBloom)
+							{
+								float bloomFloat;
+								RunMethod(&bloomFloat, material, "GetFloat", &bloomID);
+								if (bloomFloat > 0)
+								setColor = true;
+							}
+						}
+						if (setColor)
+						{
+							materials.push_back(material); 
+						}
 					}
 				}
-				if (setColor)
-				{
-					RunMethod(material, "SetColor", colorString, &color);
-				}
 			}
+			if(materials.size() > 0)
+				sabersMaterials[saber] = materials;
 		}
+	}
+	
+}
+
+void SetSaberColor(Il2CppObject* saber, Color color){
+	Il2CppString* colorString = createcsstr("_Color");
+	map<Il2CppObject*, vector<Il2CppObject*>>::iterator it = sabersMaterials.find(saber);
+	if(it == sabersMaterials.end())
+	{
+		CacheSaber(saber);
+	}
+	for (Il2CppObject* material : sabersMaterials[saber]) 
+	{  
+		RunMethod(material, "SetColor", colorString, &color);
 	}
 }
 
@@ -342,8 +366,9 @@ MAKE_HOOK_OFFSETLESS(ObstacleController_Update, void, Il2CppObject* self){
 	ObstacleController_Update(self);
 }
 
-MAKE_HOOK_OFFSETLESS(InitHooks, void*, void* arg1, void* arg2, void* arg3){
-	if(!hookInit){
+void InitHooks(){
+	while(!hookInit){
+		sleep(1);
 		Init();
 		Il2CppClass* saberManagerClass = GetClassFromName("", "SaberManager");
 		const MethodInfo* saberManager_UpdateMethod = class_get_method_from_name(saberManagerClass, "Update", 0);
@@ -352,13 +377,13 @@ MAKE_HOOK_OFFSETLESS(InitHooks, void*, void* arg1, void* arg2, void* arg3){
 		Il2CppClass* saberBurnMarkSparklesClass = GetClassFromName("", "SaberBurnMarkSparkles");
 		const MethodInfo* saberBurnMarkSparkles_LateUpdateMethod = class_get_method_from_name(saberBurnMarkSparklesClass, "LateUpdate", 0);
 		INSTALL_HOOK_OFFSETLESS(SaberBurnMarkSparkles_LateUpdate, saberBurnMarkSparkles_LateUpdateMethod);
-		
+			
 		Il2CppClass* tutorialControllerClass = GetClassFromName("", "TutorialController");
 		const MethodInfo* tutorialController_AwakeMethod = class_get_method_from_name(tutorialControllerClass, "Awake", 0);
 		INSTALL_HOOK_OFFSETLESS(TutorialController_Awake, tutorialController_AwakeMethod);
 		const MethodInfo* tutorialController_OnDestroyMethod = class_get_method_from_name(tutorialControllerClass, "OnDestroy", 0);
 		INSTALL_HOOK_OFFSETLESS(TutorialController_OnDestroy, tutorialController_OnDestroyMethod);
-
+		
 		if(Config.SabersActive){
 			Il2CppClass* gameNoteControllerClass = GetClassFromName("", "GameNoteController");
 			const MethodInfo* gameNoteController_UpdateMethod = class_get_method_from_name(gameNoteControllerClass, "Update", 0);
@@ -369,9 +394,9 @@ MAKE_HOOK_OFFSETLESS(InitHooks, void*, void* arg1, void* arg2, void* arg3){
 			const MethodInfo* obstacleController_UpdateMethod = class_get_method_from_name(obstacleControllerClass, "Update", 0);
 			INSTALL_HOOK_OFFSETLESS(ObstacleController_Update, obstacleController_UpdateMethod);
 		}
+		log(INFO, "Successfully installed Hooks!");
 		hookInit = true;
 	}
-	return InitHooks(arg1, arg2, arg3);
 }
 
 void createDefaultConfig() {
@@ -447,13 +472,7 @@ __attribute__((constructor)) void lib_main()
 	saberB = Config.SabersStartDiff;
 	environmentColor1 = Config.LightsStartDiff;
 
-	uintptr_t base = baseAddr("/data/app/com.beatgames.beatsaber-1/lib/arm64/libunity.so");
-	uintptr_t hookAddr = FindPattern(base, 0x1000000, "ff 83 01 d1 f8 13 00 f9 f7 5b 03 a9 f5 53 04 a9 f3 7b 05 a9 f4 03 02 aa f5 03 01 aa f6 03 00 aa");
-	if(hookAddr){
-		INSTALL_HOOK_DIRECT(InitHooks, hookAddr);
-		log(INFO, "Successfully installed RainbowSabers!");
-	}else{
-		log(ERROR, "Couldn't find Method in libunity.so!");
-	}
-
+	std::thread initHooksThread(InitHooks);
+	initHooksThread.detach();
+	log(INFO, "Successfully installed RainbowSabers!");
 }

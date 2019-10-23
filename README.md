@@ -9,7 +9,7 @@ Just download the [Latest Release](https://github.com/darknight1050/QuestMods/re
 
 ## Config
 
-The config is location is: 
+The config location is: 
 >/sdcard/Android/data/com.beatgames.beatsaber/files/mod_cfgs/RainbowMod.json
 
 Values:

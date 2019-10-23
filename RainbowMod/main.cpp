@@ -565,5 +565,5 @@ __attribute__((constructor)) void lib_main()
 
 	std::thread initHooksThread(InitHooks);
 	initHooksThread.detach();
-	log(INFO, "Successfully installed RainbowSabers!");
+	log(INFO, "Successfully installed RainbowMod!");
 }

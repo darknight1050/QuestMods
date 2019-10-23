@@ -31,8 +31,8 @@ LOCAL_MODULE := hook
 #LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/../include
 include $(CLEAR_VARS)
 LOCAL_LDLIBS := -llog
-LOCAL_CFLAGS    := -DMOD_ID='"RainbowSabers"' -DVERSION='"0.0.5"'
-LOCAL_MODULE    := rainbowsabers
+LOCAL_CFLAGS    := -DMOD_ID='"RainbowMod"' -DVERSION='"0.0.6"'
+LOCAL_MODULE    := rainbowmod
 LOCAL_CPPFLAGS := -std=c++2a 
 
 #LOCAL_SHARED_LIBRARIES := testil2cpp

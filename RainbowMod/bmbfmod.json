@@ -1,0 +1,25 @@
+{
+	"id": "RainbowMod",
+	"name": "RainbowMod",
+	"author": "darknight1050",
+	"description": [
+		"This mod adds Rainbow Lights, Walls, Sabers, Trails and Notes\n Config: /sdcard/Android/data/com.beatgames.beatsaber/files/mod_cfgs/RainbowMod.json"
+	],
+	"category": "Other",
+	"gameVersion": "1.4.3",
+	"version": "0.0.6",
+	"links": {
+		"project-home": "https://github.com/darknight1050/QuestMods"
+	},
+	"platform": "Quest",
+	"components": [{
+			"Type": "HookMod",
+			"InstallAction": {
+				"InstallLibraryFile": "librainbowmod.so"
+			},
+			"UninstallAction": {
+				"RemoveLibraryFile": "librainbowmod.so"
+			}
+		}
+	]
+}

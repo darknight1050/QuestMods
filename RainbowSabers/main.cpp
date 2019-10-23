@@ -28,9 +28,11 @@ using namespace std;
 static auto& config_doc = Configuration::config;
 
 static struct Config_t {
-	bool SabersActive = true;
 	bool LightsActive = true;
 	bool WallsActive = true;
+	bool SabersActive = true;
+	bool TrailsActive = true;
+	bool DisableNotes = false;
 	bool QSabersActive = false;
 	double SaberASpeed = 1.0;
 	double SaberBSpeed = 1.0;
@@ -53,17 +55,20 @@ typedef struct {
 	Color obstaclesColor;
 } ColorScheme;
 
+static bool isInTutorial = false; 
 
-static bool hookInit = false;
+static bool settingColorScheme = false;
 
-ColorScheme colorScheme;
+static ColorScheme defaultColorScheme;
+static ColorScheme colorScheme;
 
 static float saberA = 0;
 static float saberB = 0;
 static float environmentColor0 = 0;
 static float environmentColor1 = 0;
 static float obstaclesColor = 0;
-static bool InTutorial = false; 
+
+static map<Il2CppObject*, vector<Il2CppObject*>> sabersMaterials; 
 
 Color ColorFromHSB(float hue, float saturation, float brightness){
 	hue/=360.0f;
@@ -127,8 +132,7 @@ Color GetColorFromManager(Il2CppObject* colorManager, const char* fieldName){
 	return color; 
 }
 
-Il2CppObject* GetFirstObjectOfType(Il2CppClass* klass)
-{
+Il2CppObject* GetFirstObjectOfType(Il2CppClass* klass){
 	Il2CppClass* resourcesClass = GetClassFromName("UnityEngine", "Resources");
 	const MethodInfo* resources_FindObjectsOfTypeAllMethod = class_get_method_from_name(resourcesClass, "FindObjectsOfTypeAll", 1);
 	Array<Il2CppObject*>* objects;
@@ -143,20 +147,8 @@ Il2CppObject* GetFirstObjectOfType(Il2CppClass* klass)
 	}
 }
 
-MAKE_HOOK_OFFSETLESS(TutorialController_Awake, void, Il2CppObject* self){
-	TutorialController_Awake(self);
-	InTutorial = true;
-}
-
-MAKE_HOOK_OFFSETLESS(TutorialController_OnDestroy, void, Il2CppObject* self){
-	TutorialController_OnDestroy(self);
-	InTutorial = false;
-}
-
-static map<Il2CppObject*, vector<Il2CppObject*>> sabersMaterials; 
-
 void CacheSaber(Il2CppObject* saber){
-	if(!InTutorial){
+	if(!isInTutorial){
 		if(Config.QSabersActive){
 			vector<Il2CppObject*> materials; 
 			bool getInactive = false;
@@ -181,7 +173,7 @@ void CacheSaber(Il2CppObject* saber){
 					{
 						Il2CppObject* material = sharedMaterials->values[h];
 						bool setColor = false;
-						int hasGlow;
+						bool hasGlow;
 						RunMethod(&hasGlow, material, "HasProperty", &glowID);
 						if (hasGlow)
 						{
@@ -192,14 +184,14 @@ void CacheSaber(Il2CppObject* saber){
 						}
 						if (!setColor)
 						{
-							int hasBloom;
+							bool hasBloom;
 							RunMethod(&hasBloom, material, "HasProperty", &bloomID);
 							if (hasBloom)
 							{
 								float bloomFloat;
 								RunMethod(&bloomFloat, material, "GetFloat", &bloomID);
 								if (bloomFloat > 0)
-								setColor = true;
+									setColor = true;
 							}
 						}
 						if (setColor)
@@ -224,9 +216,26 @@ void SetSaberColor(Il2CppObject* saber, Color color){
 		CacheSaber(saber);
 	}
 	for (Il2CppObject* material : sabersMaterials[saber]) 
-	{  
+	{
 		RunMethod(material, "SetColor", colorString, &color);
 	}
+}
+
+MAKE_HOOK_OFFSETLESS(TutorialController_Awake, void, Il2CppObject* self){
+	TutorialController_Awake(self);
+	isInTutorial = true;
+}
+
+MAKE_HOOK_OFFSETLESS(TutorialController_OnDestroy, void, Il2CppObject* self){
+	TutorialController_OnDestroy(self);
+	isInTutorial = false;
+}
+MAKE_HOOK_OFFSETLESS(ColorManager__SetColorScheme, void, Il2CppObject* self, ColorScheme scheme){
+	if(!settingColorScheme){
+		defaultColorScheme = scheme;
+	}
+	settingColorScheme = false;
+	ColorManager__SetColorScheme(self, scheme);
 }
 
 MAKE_HOOK_OFFSETLESS(SaberManager_Update, void, Il2CppObject* self){
@@ -234,7 +243,7 @@ MAKE_HOOK_OFFSETLESS(SaberManager_Update, void, Il2CppObject* self){
 	Il2CppObject* colorManager = GetFirstObjectOfType(GetClassFromName("", "ColorManager"));
 	if (colorManager != nullptr)
 	{
-		if(!InTutorial){
+		if(!isInTutorial){
 			if(Config.QSabersActive){
 				SetSaberColor(GetFieldObjectValue(self, "_leftSaber"), colorScheme.saberAColor);
 				SetSaberColor(GetFieldObjectValue(self, "_rightSaber"), colorScheme.saberBColor);
@@ -247,7 +256,7 @@ MAKE_HOOK_OFFSETLESS(SaberManager_Update, void, Il2CppObject* self){
 MAKE_HOOK_OFFSETLESS(SaberBurnMarkSparkles_LateUpdate, void, Il2CppObject* self, void *type){
 	Init();
 	Il2CppObject* colorManager = GetFieldObjectValue(self, "_colorManager");
-	if(InTutorial){
+	if(isInTutorial){
 		colorScheme.saberAColor = GetColorFromManager(colorManager, "_saberAColor");
 		colorScheme.saberBColor = GetColorFromManager(colorManager, "_saberBColor");
 		colorScheme.environmentColor0 = GetColorFromManager(colorManager, "_environmentColor0");
@@ -294,8 +303,26 @@ MAKE_HOOK_OFFSETLESS(SaberBurnMarkSparkles_LateUpdate, void, Il2CppObject* self,
 			colorScheme.obstaclesColor = GetColorFromManager(colorManager, "_obstaclesColor");
 		}
 	}
+	settingColorScheme = true;
 	RunMethod(colorManager, "SetColorScheme", &colorScheme);
 	SaberBurnMarkSparkles_LateUpdate(self, type);
+}
+
+MAKE_HOOK_OFFSETLESS(SaberWeaponTrail_get_color, Color, Il2CppObject* self){
+	Init();
+	Il2CppObject* saberTypeObject = GetFieldObjectValue(self, "_saberTypeObject");
+	int saberType;
+	RunMethod(&saberType, saberTypeObject, "get_saberType"); 
+	Color multiplierSaberColor;
+	GetFieldValue(&multiplierSaberColor, self, "_multiplierSaberColor");
+	Color saberColor = saberType == 1 ? ColorFromHSB(saberB, 1.0, 1.0) : ColorFromHSB(saberA, 1.0, 1.0);
+
+	saberColor.r = powf(saberColor.r * multiplierSaberColor.r, 2.2f);
+	saberColor.g = powf(saberColor.g * multiplierSaberColor.g, 2.2f);
+	saberColor.b = powf(saberColor.b * multiplierSaberColor.b, 2.2f);
+	saberColor.a = saberColor.a * multiplierSaberColor.a;
+
+	return saberColor;
 }
 
 MAKE_HOOK_OFFSETLESS(GameNoteController_Update, void, Il2CppObject* self){
@@ -305,11 +332,18 @@ MAKE_HOOK_OFFSETLESS(GameNoteController_Update, void, Il2CppObject* self){
 	Il2CppObject* noteController = GetFieldObjectValue(colorNoteVisuals, "_noteController");
 	
 	Il2CppObject* noteData = GetFieldObjectValue(noteController, "_noteData");
-
 	int noteType;
 	RunMethod(&noteType, noteData, "get_noteType"); 
-	Color noteColor = noteType == 1 ? colorScheme.saberBColor : colorScheme.saberAColor;
-	SetFieldValue(colorNoteVisuals, "_noteColor", &noteColor); 
+
+	Color noteColor;
+	
+	if(Config.DisableNotes){
+		noteColor = noteType == 1 ? defaultColorScheme.saberBColor : defaultColorScheme.saberAColor;
+		
+	}else{
+		noteColor = noteType == 1 ? colorScheme.saberBColor : colorScheme.saberAColor;
+		SetFieldValue(colorNoteVisuals, "_noteColor", &noteColor); 
+	} 
 	
 	float arrowGlowIntensity;
 	GetFieldValue(&arrowGlowIntensity, colorNoteVisuals, "_arrowGlowIntensity");
@@ -367,43 +401,53 @@ MAKE_HOOK_OFFSETLESS(ObstacleController_Update, void, Il2CppObject* self){
 }
 
 void InitHooks(){
-	while(!hookInit){
-		sleep(1);
-		Init();
-		Il2CppClass* saberManagerClass = GetClassFromName("", "SaberManager");
-		const MethodInfo* saberManager_UpdateMethod = class_get_method_from_name(saberManagerClass, "Update", 0);
-		INSTALL_HOOK_OFFSETLESS(SaberManager_Update, saberManager_UpdateMethod);
 
-		Il2CppClass* saberBurnMarkSparklesClass = GetClassFromName("", "SaberBurnMarkSparkles");
-		const MethodInfo* saberBurnMarkSparkles_LateUpdateMethod = class_get_method_from_name(saberBurnMarkSparklesClass, "LateUpdate", 0);
-		INSTALL_HOOK_OFFSETLESS(SaberBurnMarkSparkles_LateUpdate, saberBurnMarkSparkles_LateUpdateMethod);
-			
-		Il2CppClass* tutorialControllerClass = GetClassFromName("", "TutorialController");
-		const MethodInfo* tutorialController_AwakeMethod = class_get_method_from_name(tutorialControllerClass, "Awake", 0);
-		INSTALL_HOOK_OFFSETLESS(TutorialController_Awake, tutorialController_AwakeMethod);
-		const MethodInfo* tutorialController_OnDestroyMethod = class_get_method_from_name(tutorialControllerClass, "OnDestroy", 0);
-		INSTALL_HOOK_OFFSETLESS(TutorialController_OnDestroy, tutorialController_OnDestroyMethod);
+	sleep(2);
+	Init();
+
+	Il2CppClass* tutorialControllerClass = GetClassFromName("", "TutorialController");
+	const MethodInfo* tutorialController_AwakeMethod = class_get_method_from_name(tutorialControllerClass, "Awake", 0);
+	INSTALL_HOOK_OFFSETLESS(TutorialController_Awake, tutorialController_AwakeMethod);
+	const MethodInfo* tutorialController_OnDestroyMethod = class_get_method_from_name(tutorialControllerClass, "OnDestroy", 0);
+	INSTALL_HOOK_OFFSETLESS(TutorialController_OnDestroy, tutorialController_OnDestroyMethod);
+
+	Il2CppClass* colorManagerClass = GetClassFromName("", "ColorManager");	
+	const MethodInfo* colorManager_SetColorSchemeMethod = class_get_method_from_name(colorManagerClass, "SetColorScheme", 1);
+	INSTALL_HOOK_OFFSETLESS(ColorManager__SetColorScheme, colorManager_SetColorSchemeMethod);
+
+	Il2CppClass* saberManagerClass = GetClassFromName("", "SaberManager");
+	const MethodInfo* saberManager_UpdateMethod = class_get_method_from_name(saberManagerClass, "Update", 0);
+	INSTALL_HOOK_OFFSETLESS(SaberManager_Update, saberManager_UpdateMethod);
+
+	Il2CppClass* saberBurnMarkSparklesClass = GetClassFromName("", "SaberBurnMarkSparkles");
+	const MethodInfo* saberBurnMarkSparkles_LateUpdateMethod = class_get_method_from_name(saberBurnMarkSparklesClass, "LateUpdate", 0);
+	INSTALL_HOOK_OFFSETLESS(SaberBurnMarkSparkles_LateUpdate, saberBurnMarkSparkles_LateUpdateMethod);
 		
-		if(Config.SabersActive){
-			Il2CppClass* gameNoteControllerClass = GetClassFromName("", "GameNoteController");
-			const MethodInfo* gameNoteController_UpdateMethod = class_get_method_from_name(gameNoteControllerClass, "Update", 0);
-			INSTALL_HOOK_OFFSETLESS(GameNoteController_Update, gameNoteController_UpdateMethod);
-		}
-		if(Config.WallsActive){
-			Il2CppClass* obstacleControllerClass = GetClassFromName("", "ObstacleController");
-			const MethodInfo* obstacleController_UpdateMethod = class_get_method_from_name(obstacleControllerClass, "Update", 0);
-			INSTALL_HOOK_OFFSETLESS(ObstacleController_Update, obstacleController_UpdateMethod);
-		}
-		log(INFO, "Successfully installed Hooks!");
-		hookInit = true;
+	if(!Config.SabersActive && Config.TrailsActive){
+		Il2CppClass* saberWeaponTrailClass = GetClassFromName("", "SaberWeaponTrail");
+		const MethodInfo* saberWeaponTrail_get_colorMethod = class_get_method_from_name(saberWeaponTrailClass, "get_color", 0);
+		INSTALL_HOOK_OFFSETLESS(SaberWeaponTrail_get_color, saberWeaponTrail_get_colorMethod);
 	}
+	if(Config.SabersActive){
+		Il2CppClass* gameNoteControllerClass = GetClassFromName("", "GameNoteController");
+		const MethodInfo* gameNoteController_UpdateMethod = class_get_method_from_name(gameNoteControllerClass, "Update", 0);
+		INSTALL_HOOK_OFFSETLESS(GameNoteController_Update, gameNoteController_UpdateMethod);
+	}
+	if(Config.WallsActive){
+		Il2CppClass* obstacleControllerClass = GetClassFromName("", "ObstacleController");
+		const MethodInfo* obstacleController_UpdateMethod = class_get_method_from_name(obstacleControllerClass, "Update", 0);
+		INSTALL_HOOK_OFFSETLESS(ObstacleController_Update, obstacleController_UpdateMethod);
+	}
+	log(INFO, "Successfully installed Hooks!");
 }
 
 void createDefaultConfig() {
 	log(INFO, "Creating Configuration...");
-	config_doc.RemoveMember("SabersActive");
 	config_doc.RemoveMember("LightsActive");
 	config_doc.RemoveMember("WallsActive");
+	config_doc.RemoveMember("SabersActive");
+	config_doc.RemoveMember("TrailsActive");
+	config_doc.RemoveMember("DisableNotes");
 	config_doc.RemoveMember("QSabersActive");
 	config_doc.RemoveMember("SaberASpeed");
 	config_doc.RemoveMember("SaberBSpeed");
@@ -413,9 +457,11 @@ void createDefaultConfig() {
 	config_doc.RemoveMember("LightsStartDiff");
 	config_doc.RemoveMember("WallsSpeed");
 	
-	config_doc.AddMember("SabersActive", Config.SabersActive, config_doc.GetAllocator());
 	config_doc.AddMember("LightsActive", Config.LightsActive, config_doc.GetAllocator());
 	config_doc.AddMember("WallsActive", Config.WallsActive, config_doc.GetAllocator());
+	config_doc.AddMember("SabersActive", Config.SabersActive, config_doc.GetAllocator());
+	config_doc.AddMember("TrailsActive", Config.TrailsActive, config_doc.GetAllocator());
+	config_doc.AddMember("DisableNotes", Config.DisableNotes, config_doc.GetAllocator());
 	config_doc.AddMember("QSabersActive", Config.QSabersActive, config_doc.GetAllocator());
 	config_doc.AddMember("SaberASpeed", Config.SaberASpeed, config_doc.GetAllocator());
 	config_doc.AddMember("SaberBSpeed", Config.SaberBSpeed, config_doc.GetAllocator());
@@ -431,28 +477,73 @@ void createDefaultConfig() {
 bool loadConfig() { 
 	log(INFO, "Loading Configuration...");
 	Configuration::Load();
-	if(config_doc.HasMember("SabersActive") && config_doc["SabersActive"].IsBool() &&
-		config_doc.HasMember("LightsActive") && config_doc["LightsActive"].IsBool() &&
-		config_doc.HasMember("WallsActive") && config_doc["WallsActive"].IsBool() &&
-		config_doc.HasMember("QSabersActive") && config_doc["QSabersActive"].IsBool() &&
-		config_doc.HasMember("SaberASpeed") && config_doc["SaberASpeed"].IsDouble() &&
-		config_doc.HasMember("SaberBSpeed") && config_doc["SaberBSpeed"].IsDouble() && 
-		config_doc.HasMember("SabersStartDiff") && config_doc["SabersStartDiff"].IsDouble() && 
-		config_doc.HasMember("LightASpeed") && config_doc["LightASpeed"].IsDouble() &&
-		config_doc.HasMember("LightBSpeed") && config_doc["LightBSpeed"].IsDouble() &&
-		config_doc.HasMember("LightsStartDiff") && config_doc["LightsStartDiff"].IsDouble() &&
-		config_doc.HasMember("WallsSpeed") && config_doc["WallsSpeed"].IsDouble()){
-		Config.SabersActive = config_doc["SabersActive"].GetBool();
-		Config.LightsActive = config_doc["LightsActive"].GetBool();
-		Config.WallsActive = config_doc["WallsActive"].GetBool();
-		Config.QSabersActive = config_doc["QSabersActive"].GetBool();
-		Config.SaberASpeed = config_doc["SaberASpeed"].GetDouble();
-		Config.SaberBSpeed = config_doc["SaberBSpeed"].GetDouble();
-		Config.SabersStartDiff = config_doc["SabersStartDiff"].GetDouble();
-		Config.LightASpeed = config_doc["LightASpeed"].GetDouble();
-		Config.LightBSpeed = config_doc["LightBSpeed"].GetDouble();
-		Config.LightsStartDiff = config_doc["LightsStartDiff"].GetDouble();
-		Config.WallsSpeed = config_doc["WallsSpeed"].GetDouble();
+	bool foundEverything = true;
+	if(config_doc.HasMember("LightsActive") && config_doc["LightsActive"].IsBool()){
+		Config.LightsActive = config_doc["LightsActive"].GetBool();	
+	}else{
+		foundEverything = false;
+	}
+	if(config_doc.HasMember("WallsActive") && config_doc["WallsActive"].IsBool()){
+		Config.WallsActive = config_doc["WallsActive"].GetBool();	
+	}else{
+		foundEverything = false;
+	}
+	if(config_doc.HasMember("SabersActive") && config_doc["SabersActive"].IsBool()){
+		Config.SabersActive = config_doc["SabersActive"].GetBool();	
+	}else{
+		foundEverything = false;
+	}
+	if(config_doc.HasMember("TrailsActive") && config_doc["TrailsActive"].IsBool()){
+		Config.TrailsActive = config_doc["TrailsActive"].GetBool();	
+	}else{
+		foundEverything = false;
+	}
+	if(config_doc.HasMember("DisableNotes") && config_doc["DisableNotes"].IsBool()){
+		Config.DisableNotes = config_doc["DisableNotes"].GetBool();	
+	}else{
+		foundEverything = false;
+	}
+	if(config_doc.HasMember("QSabersActive") && config_doc["QSabersActive"].IsBool()){
+		Config.QSabersActive = config_doc["QSabersActive"].GetBool();	
+	}else{
+		foundEverything = false;
+	}
+	if(config_doc.HasMember("SaberASpeed") && config_doc["SaberASpeed"].IsDouble()){
+		Config.SaberASpeed = config_doc["SaberASpeed"].GetDouble();	
+	}else{
+		foundEverything = false;
+	}
+	if(config_doc.HasMember("SaberBSpeed") && config_doc["SaberBSpeed"].IsDouble()){
+		Config.SaberBSpeed = config_doc["SaberBSpeed"].GetDouble();	
+	}else{
+		foundEverything = false;
+	}
+	if(config_doc.HasMember("SabersStartDiff") && config_doc["SabersStartDiff"].IsDouble()){
+		Config.SabersStartDiff = config_doc["SabersStartDiff"].GetDouble();	
+	}else{
+		foundEverything = false;
+	}
+	if(config_doc.HasMember("LightASpeed") && config_doc["LightASpeed"].IsDouble()){
+		Config.LightASpeed = config_doc["LightASpeed"].GetDouble();	
+	}else{
+		foundEverything = false;
+	}
+	if(config_doc.HasMember("LightBSpeed") && config_doc["LightBSpeed"].IsDouble()){
+		Config.LightBSpeed = config_doc["LightBSpeed"].GetDouble();	
+	}else{
+		foundEverything = false;
+	}
+	if(config_doc.HasMember("LightsStartDiff") && config_doc["LightsStartDiff"].IsDouble()){
+		Config.LightsStartDiff = config_doc["LightsStartDiff"].GetDouble();	
+	}else{
+		foundEverything = false;
+	}
+	if(config_doc.HasMember("WallsSpeed") && config_doc["WallsSpeed"].IsDouble()){
+		Config.WallsSpeed = config_doc["WallsSpeed"].GetDouble();	
+	}else{
+		foundEverything = false;
+	}
+	if(foundEverything){
 		log(INFO, "Loaded Configuration!");
 		return true;
 	}

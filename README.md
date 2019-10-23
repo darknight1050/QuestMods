@@ -16,8 +16,8 @@ Values:
 - **LightsActive**:  Activate Rainbow Lights
 - **WallsActive**:  Activate Rainbow Walls
 - **SabersActive**:  Activate Rainbow Sabers and Notes (if **DisableNotes** isn't enabled)
-- **TrailsActive**:  Activate Rainbow Trails (if **SabersActive** is activated this will get ignored and is always active)
-- **DisableNotes**: Use default notes if **SabersActive** is activated
+- **TrailsActive**:  Activates Rainbow Trails (if **SabersActive** is enabled then **TrailsActive** will always be on)
+- **DisableNotes**: Disables Rainbow Notes if **SabersActive** is enabled
 - **QSabersActive**: Activate this if you use the QSabers mod
 - **SaberASpeed**: Speed of the color change of the Left Saber
 - **SaberBSpeed**: Speed of the color change of the Right Saber

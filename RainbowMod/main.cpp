@@ -263,26 +263,11 @@ MAKE_HOOK_OFFSETLESS(SaberBurnMarkSparkles_LateUpdate, void, Il2CppObject* self,
 		colorScheme.environmentColor1 = GetColorFromManager(colorManager, "_environmentColor1");
 		colorScheme.obstaclesColor = GetColorFromManager(colorManager, "_obstaclesColor");
 	}else{
-		saberA+=Config.SaberASpeed;
-		if(saberA > 360){
-			saberA = 0;
-		}
-		saberB+=Config.SaberBSpeed;
-		if(saberB > 360){
-			saberB = 0;
-		}
-		environmentColor0+=Config.LightASpeed;
-		if(environmentColor0 > 360){
-			environmentColor0 = 0;
-		}
-		environmentColor1+=Config.LightBSpeed;
-		if(environmentColor1 > 360){
-			environmentColor1 = 0;
-		}
-		obstaclesColor+=Config.WallsSpeed;
-		if(obstaclesColor > 360){
-			obstaclesColor = 0;
-		}
+		saberA = (saberA+Config.SaberASpeed) % 360;
+		saberB = (saberB+Config.SaberBSpeed) % 360;
+		environmentColor0 = (environmentColor0+Config.LightASpeed) % 360;
+		environmentColor1 = (environmentColor1+Config.LightBSpeed) % 360;
+		obstaclesColor = (obstaclesColor+Config.WallsSpeed) % 360;
 		if(Config.SabersActive){
 			colorScheme.saberAColor = ColorFromHSB(saberA, 1.0, 1.0);
 			colorScheme.saberBColor = ColorFromHSB(saberB, 1.0, 1.0);

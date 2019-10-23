@@ -1,4 +1,8 @@
 */obj/*
 *.so
 *.jar
+.vs
 libil2cpp
+libmain
+libmodloader
+CustomSabers

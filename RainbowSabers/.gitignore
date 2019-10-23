@@ -1,5 +1,8 @@
 */obj/*
 *.so
 *.jar
+.vs
 RainbowSabers.json
 RainbowSabers.zip
+lan connect fast.bat
+

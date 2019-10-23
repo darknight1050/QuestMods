@@ -452,9 +452,6 @@ void createDefaultConfig() {
 	config_doc.RemoveMember("SaberASpeed");
 	config_doc.RemoveMember("SaberBSpeed");
 	config_doc.RemoveMember("SabersStartDiff");
-	config_doc.RemoveMember("LightASpeed");
-	config_doc.RemoveMember("LightBSpeed");
-	config_doc.RemoveMember("LightsStartDiff");
 	config_doc.RemoveMember("WallsSpeed");
 	
 	config_doc.AddMember("LightsActive", Config.LightsActive, config_doc.GetAllocator());
@@ -466,9 +463,6 @@ void createDefaultConfig() {
 	config_doc.AddMember("SaberASpeed", Config.SaberASpeed, config_doc.GetAllocator());
 	config_doc.AddMember("SaberBSpeed", Config.SaberBSpeed, config_doc.GetAllocator());
 	config_doc.AddMember("SabersStartDiff", Config.SabersStartDiff, config_doc.GetAllocator());
-	config_doc.AddMember("LightASpeed", Config.LightASpeed, config_doc.GetAllocator());
-	config_doc.AddMember("LightBSpeed", Config.LightBSpeed, config_doc.GetAllocator());
-	config_doc.AddMember("LightsStartDiff", Config.LightsStartDiff, config_doc.GetAllocator());
 	config_doc.AddMember("WallsSpeed", Config.WallsSpeed, config_doc.GetAllocator());
 	Configuration::Write();
 	log(INFO, "Created Configuration!");
@@ -520,21 +514,6 @@ bool loadConfig() {
 	}
 	if(config_doc.HasMember("SabersStartDiff") && config_doc["SabersStartDiff"].IsDouble()){
 		Config.SabersStartDiff = config_doc["SabersStartDiff"].GetDouble();	
-	}else{
-		foundEverything = false;
-	}
-	if(config_doc.HasMember("LightASpeed") && config_doc["LightASpeed"].IsDouble()){
-		Config.LightASpeed = config_doc["LightASpeed"].GetDouble();	
-	}else{
-		foundEverything = false;
-	}
-	if(config_doc.HasMember("LightBSpeed") && config_doc["LightBSpeed"].IsDouble()){
-		Config.LightBSpeed = config_doc["LightBSpeed"].GetDouble();	
-	}else{
-		foundEverything = false;
-	}
-	if(config_doc.HasMember("LightsStartDiff") && config_doc["LightsStartDiff"].IsDouble()){
-		Config.LightsStartDiff = config_doc["LightsStartDiff"].GetDouble();	
 	}else{
 		foundEverything = false;
 	}

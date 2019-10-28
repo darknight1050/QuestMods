@@ -383,6 +383,8 @@ MAKE_HOOK_OFFSETLESS(ObstacleController_Update, void, Il2CppObject* self){
 void InitHooks(){
     sleep(1);
 
+    helper.Initialize();
+    
     Il2CppClass* tutorialControllerClass = helper.GetClassFromName("", "TutorialController");
     const MethodInfo* tutorialController_AwakeMethod = helper.class_get_method_from_name(tutorialControllerClass, "Awake", 0);
     INSTALL_HOOK_OFFSETLESS(TutorialController_Awake, tutorialController_AwakeMethod);

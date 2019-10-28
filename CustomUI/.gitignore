@@ -1,0 +1,8 @@
+*/obj/*
+*.so
+*.jar
+.vs
+RainbowMod.json
+RainbowMod.zip
+lan connect fast.bat
+

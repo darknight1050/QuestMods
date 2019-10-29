@@ -39,14 +39,14 @@ static bool boolTrue = true;
 static bool boolFalse = false;
 
 void SetUIActive(bool active){
-    if(active){
-        helper.RunMethod(customUI, "SetActive", &boolTrue);
-        for(int i = 0;i<menuButtons->Length();i++)
-            helper.RunMethod(menuButtons->values[i], "set_enabled", &boolFalse);
-    }else{
-        helper.RunMethod(customUI, "SetActive", &boolFalse);
-        for(int i = 0;i<menuButtons->Length();i++)
-            helper.RunMethod(menuButtons->values[i], "set_enabled", &boolTrue);
+    if(customUI != nullptr){
+        bool invertedActive = !active;
+        helper.RunMethod(customUI, "SetActive", &active);
+        for(int i = 0;i<menuButtons->Length();i++){
+            Il2CppObject* buttonGameObject;
+            helper.RunMethod(&buttonGameObject, menuButtons->values[i], "get_gameObject");
+            helper.RunMethod(buttonGameObject, "SetActive", &invertedActive);
+        }
     }
 }
 
@@ -98,15 +98,17 @@ void AssetBundleCreateRequestComplete(){
     log(INFO, "AssetBundleCreateRequestComplete!");
     Il2CppObject* customUIAssetBundle;
     helper.RunMethod(&customUIAssetBundle, assetBundleCreateRequest, "get_assetBundle");
-    helper.RunMethod(&assetBundleRequest, customUIAssetBundle, "LoadAssetAsync", helper.createcsstr("_customui"), helper.type_get_object(helper.class_get_type(helper.GetClassFromName("UnityEngine", "GameObject"))));
-    auto action = helper.MakeAction(nullptr, AssetBundleComplete, helper.class_get_type(helper.GetClassFromName("System", "Action")));
-    helper.SetFieldValue(assetBundleRequest, "m_completeCallback", action);
+    if(customUIAssetBundle != nullptr){
+        helper.RunMethod(&assetBundleRequest, customUIAssetBundle, "LoadAssetAsync", helper.createcsstr("_customui"), helper.type_get_object(helper.class_get_type(helper.GetClassFromName("UnityEngine", "GameObject"))));
+        auto action = helper.MakeAction(nullptr, AssetBundleComplete, helper.class_get_type(helper.GetClassFromName("System", "Action")));
+        helper.SetFieldValue(assetBundleRequest, "m_completeCallback", action);
+    }
 }
-
 Il2CppObject* textObject;
 MAKE_HOOK_OFFSETLESS(MainMenuViewController_DidActivate, void, Il2CppObject* self, bool firstActivation, int type){
     MainMenuViewController_DidActivate(self, firstActivation, type);    
     if(firstActivation){
+        customUI = nullptr;
         helper.RunMethod(&buttonBinder, self, "get__buttonBinder");
        
         Il2CppObject* settingsButton = helper.GetFieldObjectValue(self, "_settingsButton");

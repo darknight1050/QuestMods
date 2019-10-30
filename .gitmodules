@@ -1,3 +1,6 @@
 [submodule "beatsaber-hook"]
 	path = beatsaber-hook
 	url = https://github.com/darknight1050/beatsaber-hook
+[submodule "questui"]
+	path = questui
+	url = https://github.com/darknight1050/questui

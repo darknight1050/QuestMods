@@ -474,8 +474,10 @@ void InitHooks(){
 }
 
 void SaveConfig() {
-    log(INFO, "Creating Configuration...");
+    log(INFO, "Saving Configuration...");
     config_doc.RemoveAllMembers();
+    config_doc.Clear();
+    Configuration::Write();
     config_doc.AddMember("Lights", Config.Lights, config_doc.GetAllocator());
     config_doc.AddMember("Walls", Config.Walls, config_doc.GetAllocator());
     config_doc.AddMember("Sabers", Config.Sabers, config_doc.GetAllocator());
@@ -487,7 +489,7 @@ void SaveConfig() {
     config_doc.AddMember("SabersStartDiff", Config.SabersStartDiff, config_doc.GetAllocator());
     config_doc.AddMember("WallsSpeed", Config.WallsSpeed, config_doc.GetAllocator());
     Configuration::Write();
-    log(INFO, "Created Configuration!");
+    log(INFO, "Saved Configuration!");
 }
 
 bool LoadConfig() { 

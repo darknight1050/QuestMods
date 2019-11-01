@@ -23,15 +23,13 @@ using namespace std;
 static IL2CPP_Helper* helper;
 
 static Il2CppObject* assetBundle;
-
-static Il2CppObject* modPanel;
 static Il2CppObject* customUIObject;
 
 static int counter = 0;
 
 void UpdateTextCounter(){
     char text[64];
-    sprintf(text, "Clicks: %d", counter);
+    sprintf(text, "%d", counter);
     Il2CppObject* textObject = UnityHelper::GetComponentInChildren(helper, customUIObject, helper->GetClassFromName("TMPro", "TextMeshProUGUI"), "TextCounter");
     helper->RunMethod(textObject, "set_text", helper->createcsstr(text));
 }
@@ -50,8 +48,6 @@ void OnLoadAssetComplete(Il2CppObject* asset){
     UnityHelper::AddButtonOnClick(helper, QuestUI::GetQuestUIInfo()->ButtonBinder, customUIObject, "ButtonCounter", (UnityHelper::ButtonOnClickFunction*)ButtonCounterClick);
 
     UpdateTextCounter();
-    
-    log(INFO, "AssetLoaderOnFinish Called!");
 }
 
 void OnLoadAssetBundleComplete(Il2CppObject* assetBundleArg){
@@ -66,13 +62,17 @@ void QuestUIOnInitialized(){
         UnityAssetLoader::LoadAssetFromAssetBundleAsync(assetBundle, (UnityAssetLoader_OnLoadAssetCompleteFunction*)OnLoadAssetComplete);
     }
 }
-
 void InitHooks(){
     sleep(1);
     helper = new IL2CPP_Helper();
     helper->Initialize();
     
     QuestUI::Initialize("CustomUI", QuestUIOnInitialized);
+    /*QuestUI::Initialize("TestMod 6", QuestUIOnInitializedE);
+    QuestUI::Initialize("TestMod 7", QuestUIOnInitializedE);
+    QuestUI::Initialize("TestMod 8", QuestUIOnInitializedE);
+    QuestUI::Initialize("TestMod 9", QuestUIOnInitializedE);
+    QuestUI::Initialize("TestMod 10", QuestUIOnInitializedE);*/
     
     log(INFO, "Successfully installed CustomUI!");
 }

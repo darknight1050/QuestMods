@@ -68,12 +68,7 @@ void InitHooks(){
     helper->Initialize();
     
     QuestUI::Initialize("CustomUI", QuestUIOnInitialized);
-    /*QuestUI::Initialize("TestMod 6", QuestUIOnInitializedE);
-    QuestUI::Initialize("TestMod 7", QuestUIOnInitializedE);
-    QuestUI::Initialize("TestMod 8", QuestUIOnInitializedE);
-    QuestUI::Initialize("TestMod 9", QuestUIOnInitializedE);
-    QuestUI::Initialize("TestMod 10", QuestUIOnInitializedE);*/
-    
+
     log(INFO, "Successfully installed CustomUI!");
 }
 

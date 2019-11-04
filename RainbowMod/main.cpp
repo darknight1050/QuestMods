@@ -248,151 +248,155 @@ MAKE_HOOK_OFFSETLESS(SaberManager_Update, void, Il2CppObject* self){
     Il2CppObject* colorManager = GetFirstObjectOfType(helper->GetClassFromName("", "ColorManager"));
     if (colorManager != nullptr)
     {
-        if(!isInTutorial){
-            if(Config.QSabers){
-                SetSaberColor(helper->GetFieldObjectValue(self, "_leftSaber"), colorScheme.saberAColor);
-                SetSaberColor(helper->GetFieldObjectValue(self, "_rightSaber"), colorScheme.saberBColor);
-            }
+        if(!isInTutorial && Config.QSabers){
+            SetSaberColor(helper->GetFieldObjectValue(self, "_leftSaber"), colorScheme.saberAColor);
+            SetSaberColor(helper->GetFieldObjectValue(self, "_rightSaber"), colorScheme.saberBColor);
         }
     }
     SaberManager_Update(self);
 }
 
 MAKE_HOOK_OFFSETLESS(SaberBurnMarkSparkles_LateUpdate, void, Il2CppObject* self, void *type){
-
     Il2CppObject* colorManager = helper->GetFieldObjectValue(self, "_colorManager");
-    if(isInTutorial){
-        colorScheme.saberAColor = GetColorFromManager(colorManager, "_saberAColor");
-        colorScheme.saberBColor = GetColorFromManager(colorManager, "_saberBColor");
-        colorScheme.environmentColor0 = GetColorFromManager(colorManager, "_environmentColor0");
-        colorScheme.environmentColor1 = GetColorFromManager(colorManager, "_environmentColor1");
-        colorScheme.obstaclesColor = GetColorFromManager(colorManager, "_obstaclesColor");
-    }else{
-        saberA = fmod(saberA+Config.SaberASpeed, 360);
-        saberB = fmod(saberB+Config.SaberBSpeed, 360);
-        environmentColor0 = fmod(environmentColor0+Config.LightASpeed, 360);
-        environmentColor1 = fmod(environmentColor1+Config.LightBSpeed, 360);
-        obstaclesColor = fmod(obstaclesColor+Config.WallsSpeed, 360);
-        if(Config.Sabers){
-            colorScheme.saberAColor = ColorFromHSB(saberA, 1.0, 1.0);
-            colorScheme.saberBColor = ColorFromHSB(saberB, 1.0, 1.0);
-        }else{
+    if(colorManager != nullptr){
+        if(isInTutorial){
             colorScheme.saberAColor = GetColorFromManager(colorManager, "_saberAColor");
             colorScheme.saberBColor = GetColorFromManager(colorManager, "_saberBColor");
-        }
-        if(Config.Lights){
-            colorScheme.environmentColor0 = ColorFromHSB(environmentColor0, 1.0, 1.0);
-            colorScheme.environmentColor1 = ColorFromHSB(environmentColor1, 1.0, 1.0);
-        }else{
             colorScheme.environmentColor0 = GetColorFromManager(colorManager, "_environmentColor0");
             colorScheme.environmentColor1 = GetColorFromManager(colorManager, "_environmentColor1");
-        }
-        if(Config.Walls){
-            colorScheme.obstaclesColor = ColorFromHSB(obstaclesColor, 1.0, 1.0);
-        }else{
             colorScheme.obstaclesColor = GetColorFromManager(colorManager, "_obstaclesColor");
+        }else{
+            saberA = fmod(saberA+Config.SaberASpeed, 360);
+            saberB = fmod(saberB+Config.SaberBSpeed, 360);
+            environmentColor0 = fmod(environmentColor0+Config.LightASpeed, 360);
+            environmentColor1 = fmod(environmentColor1+Config.LightBSpeed, 360);
+            obstaclesColor = fmod(obstaclesColor+Config.WallsSpeed, 360);
+            if(Config.Sabers){
+                colorScheme.saberAColor = ColorFromHSB(saberA, 1.0, 1.0);
+                colorScheme.saberBColor = ColorFromHSB(saberB, 1.0, 1.0);
+            }else{
+                colorScheme.saberAColor = GetColorFromManager(colorManager, "_saberAColor");
+                colorScheme.saberBColor = GetColorFromManager(colorManager, "_saberBColor");
+            }
+            if(Config.Lights){
+                colorScheme.environmentColor0 = ColorFromHSB(environmentColor0, 1.0, 1.0);
+                colorScheme.environmentColor1 = ColorFromHSB(environmentColor1, 1.0, 1.0);
+            }else{
+                colorScheme.environmentColor0 = GetColorFromManager(colorManager, "_environmentColor0");
+                colorScheme.environmentColor1 = GetColorFromManager(colorManager, "_environmentColor1");
+            }
+            if(Config.Walls){
+                colorScheme.obstaclesColor = ColorFromHSB(obstaclesColor, 1.0, 1.0);
+            }else{
+                colorScheme.obstaclesColor = GetColorFromManager(colorManager, "_obstaclesColor");
+            }
         }
+        settingColorScheme = true;
+        helper->RunMethod(colorManager, "SetColorScheme", &colorScheme);
     }
-    settingColorScheme = true;
-    helper->RunMethod(colorManager, "SetColorScheme", &colorScheme);
     SaberBurnMarkSparkles_LateUpdate(self, type);
+    
 }
 
 MAKE_HOOK_OFFSETLESS(SaberWeaponTrail_get_color, Color, Il2CppObject* self){
+    if(!Config.Sabers && Config.Trails){
+        Il2CppObject* saberTypeObject = helper->GetFieldObjectValue(self, "_saberTypeObject");
+        int saberType;
+        helper->RunMethod(&saberType, saberTypeObject, "get_saberType"); 
+        Color multiplierSaberColor;
+        helper->GetFieldValue(&multiplierSaberColor, self, "_multiplierSaberColor");
+        Color saberColor = saberType == 1 ? ColorFromHSB(saberB, 1.0, 1.0) : ColorFromHSB(saberA, 1.0, 1.0);
 
-    Il2CppObject* saberTypeObject = helper->GetFieldObjectValue(self, "_saberTypeObject");
-    int saberType;
-    helper->RunMethod(&saberType, saberTypeObject, "get_saberType"); 
-    Color multiplierSaberColor;
-    helper->GetFieldValue(&multiplierSaberColor, self, "_multiplierSaberColor");
-    Color saberColor = saberType == 1 ? ColorFromHSB(saberB, 1.0, 1.0) : ColorFromHSB(saberA, 1.0, 1.0);
+        saberColor.r = powf(saberColor.r * multiplierSaberColor.r, 2.2f);
+        saberColor.g = powf(saberColor.g * multiplierSaberColor.g, 2.2f);
+        saberColor.b = powf(saberColor.b * multiplierSaberColor.b, 2.2f);
+        saberColor.a = saberColor.a * multiplierSaberColor.a;
 
-    saberColor.r = powf(saberColor.r * multiplierSaberColor.r, 2.2f);
-    saberColor.g = powf(saberColor.g * multiplierSaberColor.g, 2.2f);
-    saberColor.b = powf(saberColor.b * multiplierSaberColor.b, 2.2f);
-    saberColor.a = saberColor.a * multiplierSaberColor.a;
-
-    return saberColor;
+        return saberColor;
+    }
+    return SaberWeaponTrail_get_color(self);
 }
 
 MAKE_HOOK_OFFSETLESS(GameNoteController_Update, void, Il2CppObject* self){
+    if(Config.Sabers){
+        Il2CppObject* disappearingArrowController = helper->GetFieldObjectValue(self, "_disappearingArrowController");
+        Il2CppObject* colorNoteVisuals = helper->GetFieldObjectValue(disappearingArrowController, "_colorNoteVisuals");
+        Il2CppObject* noteController = helper->GetFieldObjectValue(colorNoteVisuals, "_noteController");
+        
+        Il2CppObject* noteData = helper->GetFieldObjectValue(noteController, "_noteData");
+        int noteType;
+        helper->RunMethod(&noteType, noteData, "get_noteType"); 
 
-    Il2CppObject* disappearingArrowController = helper->GetFieldObjectValue(self, "_disappearingArrowController");
-    Il2CppObject* colorNoteVisuals = helper->GetFieldObjectValue(disappearingArrowController, "_colorNoteVisuals");
-    Il2CppObject* noteController = helper->GetFieldObjectValue(colorNoteVisuals, "_noteController");
-    
-    Il2CppObject* noteData = helper->GetFieldObjectValue(noteController, "_noteData");
-    int noteType;
-    helper->RunMethod(&noteType, noteData, "get_noteType"); 
-
-    Color noteColor;
-    
-    if(Config.Notes){
-        noteColor = noteType == 1 ? colorScheme.saberBColor : colorScheme.saberAColor;
-        helper->SetFieldValue(colorNoteVisuals, "_noteColor", &noteColor); 
-    }else{
-        noteColor = noteType == 1 ? defaultColorScheme.saberBColor : defaultColorScheme.saberAColor;
-    } 
-    
-    float arrowGlowIntensity;
-    helper->GetFieldValue(&arrowGlowIntensity, colorNoteVisuals, "_arrowGlowIntensity");
-    Color arrowGlowSpriteRendererColor = noteColor;
-    arrowGlowSpriteRendererColor.a = arrowGlowIntensity;
-    Il2CppObject* arrowGlowSpriteRenderer = helper->GetFieldObjectValue(colorNoteVisuals, "_arrowGlowSpriteRenderer");
-    helper->RunMethod(arrowGlowSpriteRenderer, "set_color", &arrowGlowSpriteRendererColor); 
-    Il2CppObject* circleGlowSpriteRenderer = helper->GetFieldObjectValue(colorNoteVisuals, "_circleGlowSpriteRenderer");
-    helper->RunMethod(circleGlowSpriteRenderer, "set_color", &noteColor); 
-    Array<Il2CppObject*>* materialPropertyBlockControllers = reinterpret_cast<Array<Il2CppObject*>*>(helper->GetFieldObjectValue(colorNoteVisuals, "_materialPropertyBlockControllers"));
-    
-    for(int i = 0;i<materialPropertyBlockControllers->Length();i++){
-        Il2CppObject* materialPropertyBlockController = materialPropertyBlockControllers->values[i];
-        Il2CppObject* materialPropertyBlock;
-        helper->RunMethod(&materialPropertyBlock, materialPropertyBlockController, "get_materialPropertyBlock"); 
-        Color materialPropertyBlockColor = noteColor;
-        materialPropertyBlockColor.a = 1.0f;
-        helper->RunMethod(materialPropertyBlock, "SetColor", helper->createcsstr("_Color"), &materialPropertyBlockColor);
-        helper->RunMethod(materialPropertyBlockController, "ApplyChanges");
+        Color noteColor;
+        
+        if(Config.Notes){
+            noteColor = noteType == 1 ? colorScheme.saberBColor : colorScheme.saberAColor;
+            helper->SetFieldValue(colorNoteVisuals, "_noteColor", &noteColor); 
+        }else{
+            noteColor = noteType == 1 ? defaultColorScheme.saberBColor : defaultColorScheme.saberAColor;
+        } 
+        
+        float arrowGlowIntensity;
+        helper->GetFieldValue(&arrowGlowIntensity, colorNoteVisuals, "_arrowGlowIntensity");
+        Color arrowGlowSpriteRendererColor = noteColor;
+        arrowGlowSpriteRendererColor.a = arrowGlowIntensity;
+        Il2CppObject* arrowGlowSpriteRenderer = helper->GetFieldObjectValue(colorNoteVisuals, "_arrowGlowSpriteRenderer");
+        helper->RunMethod(arrowGlowSpriteRenderer, "set_color", &arrowGlowSpriteRendererColor); 
+        Il2CppObject* circleGlowSpriteRenderer = helper->GetFieldObjectValue(colorNoteVisuals, "_circleGlowSpriteRenderer");
+        helper->RunMethod(circleGlowSpriteRenderer, "set_color", &noteColor); 
+        Array<Il2CppObject*>* materialPropertyBlockControllers = reinterpret_cast<Array<Il2CppObject*>*>(helper->GetFieldObjectValue(colorNoteVisuals, "_materialPropertyBlockControllers"));
+        
+        for(int i = 0;i<materialPropertyBlockControllers->Length();i++){
+            Il2CppObject* materialPropertyBlockController = materialPropertyBlockControllers->values[i];
+            Il2CppObject* materialPropertyBlock;
+            helper->RunMethod(&materialPropertyBlock, materialPropertyBlockController, "get_materialPropertyBlock"); 
+            Color materialPropertyBlockColor = noteColor;
+            materialPropertyBlockColor.a = 1.0f;
+            helper->RunMethod(materialPropertyBlock, "SetColor", helper->createcsstr("_Color"), &materialPropertyBlockColor);
+            helper->RunMethod(materialPropertyBlockController, "ApplyChanges");
+        }
     }
     GameNoteController_Update(self);
 }
 
 MAKE_HOOK_OFFSETLESS(ObstacleController_Update, void, Il2CppObject* self){
+    if(Config.Walls){
+        Il2CppObject* stretchableObstacle = helper->GetFieldObjectValue(self, "_stretchableObstacle");
+        float addColorMultiplier;
+        helper->GetFieldValue(&addColorMultiplier, stretchableObstacle, "_addColorMultiplier");
 
-    Il2CppObject* stretchableObstacle = helper->GetFieldObjectValue(self, "_stretchableObstacle");
-    float addColorMultiplier;
-    helper->GetFieldValue(&addColorMultiplier, stretchableObstacle, "_addColorMultiplier");
+        Color color = colorScheme.obstaclesColor;
+        Color color2 = color;
+        color2.r *= addColorMultiplier;
+        color2.g *= addColorMultiplier;
+        color2.b *= addColorMultiplier;
+        color2.a = 0.0f;
 
-    Color color = colorScheme.obstaclesColor;
-    Color color2 = color;
-    color2.r *= addColorMultiplier;
-    color2.g *= addColorMultiplier;
-    color2.b *= addColorMultiplier;
-    color2.a = 0.0f;
+        Il2CppObject* obstacleFrame = helper->GetFieldObjectValue(stretchableObstacle, "_obstacleFrame");
+        helper->SetFieldValue(obstacleFrame, "color", &color); 
+        helper->RunMethod(obstacleFrame, "Refresh");
+        Il2CppObject* obstacleFakeGlow = helper->GetFieldObjectValue(stretchableObstacle, "_obstacleFakeGlow");
+        helper->SetFieldValue(obstacleFakeGlow, "color", &color); 
+        helper->RunMethod(obstacleFakeGlow, "Refresh");
 
-    Il2CppObject* obstacleFrame = helper->GetFieldObjectValue(stretchableObstacle, "_obstacleFrame");
-    helper->SetFieldValue(obstacleFrame, "color", &color); 
-    helper->RunMethod(obstacleFrame, "Refresh");
-    Il2CppObject* obstacleFakeGlow = helper->GetFieldObjectValue(stretchableObstacle, "_obstacleFakeGlow");
-    helper->SetFieldValue(obstacleFakeGlow, "color", &color); 
-    helper->RunMethod(obstacleFakeGlow, "Refresh");
+        Array<Il2CppObject*>* addColorSetters = reinterpret_cast<Array<Il2CppObject*>*>(helper->GetFieldObjectValue(stretchableObstacle, "_addColorSetters"));
+        for(int i = 0;i<addColorSetters->Length();i++){
+            helper->RunMethod(addColorSetters->values[i], "SetColor", &color2);
+        }
 
-    Array<Il2CppObject*>* addColorSetters = reinterpret_cast<Array<Il2CppObject*>*>(helper->GetFieldObjectValue(stretchableObstacle, "_addColorSetters"));
-    for(int i = 0;i<addColorSetters->Length();i++){
-        helper->RunMethod(addColorSetters->values[i], "SetColor", &color2);
+        Array<Il2CppObject*>* tintColorSetters = reinterpret_cast<Array<Il2CppObject*>*>(helper->GetFieldObjectValue(stretchableObstacle, "_tintColorSetters"));
+        for(int i = 0;i<tintColorSetters->Length();i++){
+            helper->RunMethod(tintColorSetters->values[i], "SetColor", &color);
+        }
     }
-
-    Array<Il2CppObject*>* tintColorSetters = reinterpret_cast<Array<Il2CppObject*>*>(helper->GetFieldObjectValue(stretchableObstacle, "_tintColorSetters"));
-    for(int i = 0;i<tintColorSetters->Length();i++){
-        helper->RunMethod(tintColorSetters->values[i], "SetColor", &color);
-    }
-    
     ObstacleController_Update(self);
 }
+
 
 void SaveConfig();
 
 void TextSaveClear(){
-    sleep(2);
+    sleep(1);
     helper->RunMethod(textSave, "set_text", helper->createcsstr(""));
 }
 
@@ -461,15 +465,9 @@ void InitHooks(){
 
     INSTALL_HOOK_OFFSETLESS(SaberBurnMarkSparkles_LateUpdate, helper->class_get_method_from_name(helper->GetClassFromName("", "SaberBurnMarkSparkles"), "LateUpdate", 0));
         
-    if(!Config.Sabers && Config.Trails){
-        INSTALL_HOOK_OFFSETLESS(SaberWeaponTrail_get_color, helper->class_get_method_from_name(helper->GetClassFromName("", "SaberWeaponTrail"), "get_color", 0));
-    }
-    if(Config.Sabers){
-        INSTALL_HOOK_OFFSETLESS(GameNoteController_Update, helper->class_get_method_from_name(helper->GetClassFromName("", "GameNoteController"), "Update", 0));
-    }
-    if(Config.Walls){
-        INSTALL_HOOK_OFFSETLESS(ObstacleController_Update, helper->class_get_method_from_name(helper->GetClassFromName("", "ObstacleController"), "Update", 0));
-    }
+    INSTALL_HOOK_OFFSETLESS(SaberWeaponTrail_get_color, helper->class_get_method_from_name(helper->GetClassFromName("", "SaberWeaponTrail"), "get_color", 0));
+    INSTALL_HOOK_OFFSETLESS(GameNoteController_Update, helper->class_get_method_from_name(helper->GetClassFromName("", "GameNoteController"), "Update", 0));
+    INSTALL_HOOK_OFFSETLESS(ObstacleController_Update, helper->class_get_method_from_name(helper->GetClassFromName("", "ObstacleController"), "Update", 0));
     log(INFO, "Successfully installed Hooks!");
 }
 

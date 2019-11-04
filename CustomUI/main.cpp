@@ -20,10 +20,10 @@
 
 using namespace std;
 
-static IL2CPP_Helper* helper;
+static IL2CPP_Helper* helper = nullptr;
 
-static Il2CppObject* assetBundle;
-static Il2CppObject* customUIObject;
+static Il2CppObject* assetBundle = nullptr;
+static Il2CppObject* customUIObject = nullptr;
 
 static int counter = 0;
 

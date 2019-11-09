@@ -4,3 +4,6 @@
 [submodule "questui"]
 	path = questui
 	url = https://github.com/darknight1050/questui
+[submodule "TwitchIRC"]
+	path = TwitchIRC
+	url = https://github.com/darknight1050/TwitchIRC.git

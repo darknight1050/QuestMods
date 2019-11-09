@@ -1,0 +1,25 @@
+{
+	"id": "ChatUI",
+	"name": "ChatUI",
+	"author": "darknight1050",
+	"description": [
+		"ChatUI"
+	],
+	"category": "Other",
+	"gameVersion": "1.4.3",
+	"version": "0.0.1",
+	"links": {
+		"project-home": "https://github.com/darknight1050/QuestMods"
+	},
+	"platform": "Quest",
+	"components": [{
+			"Type": "HookMod",
+			"InstallAction": {
+				"InstallLibraryFile": "libchatui.so"
+			},
+			"UninstallAction": {
+				"RemoveLibraryFile": "libchatui.so"
+			}
+		}
+	]
+}

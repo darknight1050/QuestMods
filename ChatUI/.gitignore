@@ -1,0 +1,8 @@
+*/obj/*
+*.so
+*.jar
+.vs
+ChatUI.json
+ChatUI.zip
+lan connect fast.bat
+

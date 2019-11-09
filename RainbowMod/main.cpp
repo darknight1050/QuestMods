@@ -21,7 +21,7 @@ using namespace std;
 
 static IL2CPP_Helper* helper = nullptr;
 
-static ConfigDocument& config_doc = Configuration::config;
+static rapidjson::Document& config_doc = Configuration::config;
 
 static struct Config_t {
     bool Lights = true;
@@ -475,7 +475,7 @@ void SaveConfig() {
     log(INFO, "Saving Configuration...");
     config_doc.RemoveAllMembers();
     config_doc.SetObject();
-    rapidjson::CrtAllocator& allocator = config_doc.GetAllocator();
+    rapidjson::Document::AllocatorType& allocator = config_doc.GetAllocator();
     config_doc.AddMember("Lights", Config.Lights, allocator);
     config_doc.AddMember("Walls", Config.Walls, allocator);
     config_doc.AddMember("Sabers", Config.Sabers, allocator);

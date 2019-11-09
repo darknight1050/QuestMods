@@ -6,7 +6,7 @@
 		"ChatUI"
 	],
 	"category": "Other",
-	"gameVersion": "1.4.3",
+	"gameVersion": "1.5.0",
 	"version": "0.0.1",
 	"links": {
 		"project-home": "https://github.com/darknight1050/QuestMods"
@@ -20,6 +20,11 @@
 			"UninstallAction": {
 				"RemoveLibraryFile": "libchatui.so"
 			}
+		},
+		{
+			"Type": "FileCopyMod",
+			"SourceFileName": "chatUI.qui",
+			"TargetRootedPathAndFileName": "/sdcard/Android/data/com.beatgames.beatsaber/files/uis/chatUI.qui"
 		}
 	]
 }

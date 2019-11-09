@@ -36,6 +36,7 @@ static Il2CppObject* customUIObject = nullptr;
 static Il2CppObject* chatObject_Template = nullptr;
 static vector<ChatObject*> chatObjects;
 static vector<ChatObject*> chatObjectsToAdd;
+static const int maxVisibleObjects = 24;
 
 static long long lastUpdate = 0;
 static bool needUpdate = false;
@@ -51,7 +52,8 @@ void UpdateList(){
         if(!chatObjectsToAdd.empty()){
             chatObjects.push_back(chatObjectsToAdd[0]);
             chatObjectsToAdd.erase(chatObjectsToAdd.begin());
-            for(int i = 0;i<chatObjects.size();i++){
+        }
+        for(int i = 0;i<chatObjects.size();i++){
                 ChatObject* chatObject = chatObjects[i];
                 if(chatObject->GameObject == nullptr){
                     ChatObject* lastChatObject = nullptr;
@@ -68,29 +70,14 @@ void UpdateList(){
                     UnityHelper::SetSameParent(helper, chatObject->GameObject, chatObject_Template);
                     UnityHelper::SetGameObjectActive(helper, chatObject->GameObject, true);
                     UnityHelper::SetButtonText(helper, chatObject->GameObject, chatObject->Text);
-                    helper->RunStaticMethod(helper->GetClassFromName("UnityEngine.UI", "LayoutRebuilder"), "ForceRebuildLayoutImmediate", UnityHelper::GetParent(helper, chatObject_Template));
-                    Vector3 chatObjectPosition;
-                    Vector3 chatObjectSize;
-                    helper->RunMethod(&chatObjectPosition, chatObject->GameObject, "get_localPosition");
-                    helper->RunMethod(&chatObjectSize, chatObject->GameObject, "get_sizeDelta");
-                    if(lastChatObject != nullptr && chatObjectSize.y > 0){
-                        float y = lastChatObjectPosition.y - lastChatObjectSize.y/2;
-                        while(chatObjectPosition.y+chatObjectSize.y/2 > y+0.1f){
-                            ChatObject* tmpChatObject = chatObjects[0];
-                            if(tmpChatObject->GameObject != nullptr){
-                                Vector3 tmpDeltaSize;
-                                helper->RunMethod(&tmpDeltaSize, tmpChatObject->GameObject, "get_sizeDelta");
-                                helper->RunStaticMethod(helper->GetClassFromName("UnityEngine", "Object"), "Destroy", UnityHelper::GetGameObject(helper, tmpChatObject->GameObject));
-                                y += tmpDeltaSize.y;
-                            }else{
-                                y = chatObjectPosition.y+chatObjectSize.y/2 + 1;
-                            }
-                            delete tmpChatObject;
-                            chatObjects.erase(chatObjects.begin());
-                        }
-                    }
                 }
             }
+        while(maxVisibleObjects<chatObjects.size()){
+            ChatObject* chatObject = chatObjects[0];
+            if(chatObject->GameObject != nullptr)
+                helper->RunStaticMethod(helper->GetClassFromName("UnityEngine", "Object"), "Destroy", UnityHelper::GetGameObject(helper, chatObject->GameObject));
+            delete chatObject;
+            chatObjects.erase(chatObjects.begin());
         }
     }
 }

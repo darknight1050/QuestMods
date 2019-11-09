@@ -474,18 +474,18 @@ void InitHooks(){
 void SaveConfig() {
     log(INFO, "Saving Configuration...");
     config_doc.RemoveAllMembers();
-    config_doc.Clear();
-    Configuration::Write();
-    config_doc.AddMember("Lights", Config.Lights, config_doc.GetAllocator());
-    config_doc.AddMember("Walls", Config.Walls, config_doc.GetAllocator());
-    config_doc.AddMember("Sabers", Config.Sabers, config_doc.GetAllocator());
-    config_doc.AddMember("Trails", Config.Trails, config_doc.GetAllocator());
-    config_doc.AddMember("Notes", Config.Notes, config_doc.GetAllocator());
-    config_doc.AddMember("QSabers", Config.QSabers, config_doc.GetAllocator());
-    config_doc.AddMember("SaberASpeed", Config.SaberASpeed, config_doc.GetAllocator());
-    config_doc.AddMember("SaberBSpeed", Config.SaberBSpeed, config_doc.GetAllocator());
-    config_doc.AddMember("SabersStartDiff", Config.SabersStartDiff, config_doc.GetAllocator());
-    config_doc.AddMember("WallsSpeed", Config.WallsSpeed, config_doc.GetAllocator());
+    config_doc.SetObject();
+    rapidjson::CrtAllocator& allocator = config_doc.GetAllocator();
+    config_doc.AddMember("Lights", Config.Lights, allocator);
+    config_doc.AddMember("Walls", Config.Walls, allocator);
+    config_doc.AddMember("Sabers", Config.Sabers, allocator);
+    config_doc.AddMember("Trails", Config.Trails, allocator);
+    config_doc.AddMember("Notes", Config.Notes, allocator);
+    config_doc.AddMember("QSabers", Config.QSabers, allocator);
+    config_doc.AddMember("SaberASpeed", Config.SaberASpeed, allocator);
+    config_doc.AddMember("SaberBSpeed", Config.SaberBSpeed, allocator);
+    config_doc.AddMember("SabersStartDiff", Config.SabersStartDiff, allocator);
+    config_doc.AddMember("WallsSpeed", Config.WallsSpeed, allocator);
     Configuration::Write();
     log(INFO, "Saved Configuration!");
 }

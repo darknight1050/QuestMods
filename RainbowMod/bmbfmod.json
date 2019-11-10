@@ -25,6 +25,11 @@
 			"Type": "FileCopyMod",
 			"SourceFileName": "rainbowmodUI.qui",
 			"TargetRootedPathAndFileName": "/sdcard/Android/data/com.beatgames.beatsaber/files/uis/rainbowmodUI.qui"
+		},
+		{
+			"Type": "FileCopyMod",
+			"SourceFileName": "questUI.qui",
+			"TargetRootedPathAndFileName": "/sdcard/Android/data/com.beatgames.beatsaber/files/uis/questUI.qui"
 		}
 	]
 }

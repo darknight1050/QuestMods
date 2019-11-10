@@ -6,7 +6,7 @@
 		"This mod adds Rainbow Lights, Walls, Sabers, Trails and Notes\n Config: /sdcard/Android/data/com.beatgames.beatsaber/files/mod_cfgs/RainbowMod.json"
 	],
 	"category": "Other",
-	"gameVersion": "1.4.3",
+	"gameVersion": "1.5.0",
 	"version": "0.0.6",
 	"links": {
 		"project-home": "https://github.com/darknight1050/QuestMods"
@@ -20,6 +20,11 @@
 			"UninstallAction": {
 				"RemoveLibraryFile": "librainbowmod.so"
 			}
+		},
+		{
+			"Type": "FileCopyMod",
+			"SourceFileName": "rainbowmodUI.qui",
+			"TargetRootedPathAndFileName": "/sdcard/Android/data/com.beatgames.beatsaber/files/uis/rainbowmodUI.qui"
 		}
 	]
 }

@@ -448,28 +448,7 @@ void QuestUIOnInitialized(){
     }
 }
 
-void InitHooks(){
-    sleep(1);
-    helper = new IL2CPP_Helper();
-    helper->Initialize();
 
-    QuestUI::Initialize("Rainbow Mod", QuestUIOnInitialized);
-    
-    Il2CppClass* tutorialControllerClass = helper->GetClassFromName("", "TutorialController");
-    INSTALL_HOOK_OFFSETLESS(TutorialController_Awake, helper->class_get_method_from_name(tutorialControllerClass, "Awake", 0));
-    INSTALL_HOOK_OFFSETLESS(TutorialController_OnDestroy, helper->class_get_method_from_name(tutorialControllerClass, "OnDestroy", 0));
-
-    INSTALL_HOOK_OFFSETLESS(ColorManager__SetColorScheme, helper->class_get_method_from_name(helper->GetClassFromName("", "ColorManager"), "SetColorScheme", 1));
-
-    INSTALL_HOOK_OFFSETLESS(SaberManager_Update, helper->class_get_method_from_name(helper->GetClassFromName("", "SaberManager"), "Update", 0));
-
-    INSTALL_HOOK_OFFSETLESS(SaberBurnMarkSparkles_LateUpdate, helper->class_get_method_from_name(helper->GetClassFromName("", "SaberBurnMarkSparkles"), "LateUpdate", 0));
-        
-    INSTALL_HOOK_OFFSETLESS(SaberWeaponTrail_get_color, helper->class_get_method_from_name(helper->GetClassFromName("", "SaberWeaponTrail"), "get_color", 0));
-    INSTALL_HOOK_OFFSETLESS(GameNoteController_Update, helper->class_get_method_from_name(helper->GetClassFromName("", "GameNoteController"), "Update", 0));
-    INSTALL_HOOK_OFFSETLESS(ObstacleController_Update, helper->class_get_method_from_name(helper->GetClassFromName("", "ObstacleController"), "Update", 0));
-    log(INFO, "Successfully installed Hooks!");
-}
 
 void SaveConfig() {
     log(INFO, "Saving Configuration...");
@@ -551,6 +530,29 @@ bool LoadConfig() {
     return false;
 }
 
+static void* libil2cpphandle;
+MAKE_HOOK_OFFSETLESS(init_hook, void, const char* domain_name) {
+    dlclose(libil2cpphandle);
+    init_hook(domain_name);
+    
+    QuestUI::Initialize("Rainbow Mod", QuestUIOnInitialized);
+    
+    Il2CppClass* tutorialControllerClass = helper->GetClassFromName("", "TutorialController");
+    INSTALL_HOOK_OFFSETLESS(TutorialController_Awake, helper->class_get_method_from_name(tutorialControllerClass, "Awake", 0));
+    INSTALL_HOOK_OFFSETLESS(TutorialController_OnDestroy, helper->class_get_method_from_name(tutorialControllerClass, "OnDestroy", 0));
+
+    INSTALL_HOOK_OFFSETLESS(ColorManager__SetColorScheme, helper->class_get_method_from_name(helper->GetClassFromName("", "ColorManager"), "SetColorScheme", 1));
+
+    INSTALL_HOOK_OFFSETLESS(SaberManager_Update, helper->class_get_method_from_name(helper->GetClassFromName("", "SaberManager"), "Update", 0));
+
+    INSTALL_HOOK_OFFSETLESS(SaberBurnMarkSparkles_LateUpdate, helper->class_get_method_from_name(helper->GetClassFromName("", "SaberBurnMarkSparkles"), "LateUpdate", 0));
+        
+    INSTALL_HOOK_OFFSETLESS(SaberWeaponTrail_get_color, helper->class_get_method_from_name(helper->GetClassFromName("", "SaberWeaponTrail"), "get_color", 0));
+    INSTALL_HOOK_OFFSETLESS(GameNoteController_Update, helper->class_get_method_from_name(helper->GetClassFromName("", "GameNoteController"), "Update", 0));
+    INSTALL_HOOK_OFFSETLESS(ObstacleController_Update, helper->class_get_method_from_name(helper->GetClassFromName("", "ObstacleController"), "Update", 0));
+    log(INFO, "Successfully installed Hooks!");
+}
+
 __attribute__((constructor)) void lib_main()
 {
     #ifdef __aarch64__
@@ -563,7 +565,8 @@ __attribute__((constructor)) void lib_main()
     saberB = Config.SabersStartDiff;
     environmentColor1 = Config.LightsStartDiff;
 
-    std::thread initHooksThread(InitHooks);
-    initHooksThread.detach();
-    log(INFO, "Successfully installed RainbowMod!");
+    libil2cpphandle = dlopen("/data/app/com.beatgames.beatsaber-1/lib/arm64/libil2cpp.so", RTLD_LOCAL | RTLD_LAZY);
+    helper = new IL2CPP_Helper();
+    helper->Initialize();
+    INSTALL_HOOK_DIRECT(init_hook,  helper->init);
 }

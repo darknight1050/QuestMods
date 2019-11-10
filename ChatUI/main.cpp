@@ -17,9 +17,12 @@ static struct Config_t {
     char* Nick = "";
     char* OAuth = "";
     char* Channel = "";
-    Vector3 Position = {0.0f, 3.0f, 4.0f};
-    Vector3 Rotation = {-36.0f, 0.0f, 0.0f};
-    Vector3 Scale = {0.0025f, 0.0025f, 0.0025f};
+    Vector3 PositionMenu = {0.0f, 3.0f, 4.0f};
+    Vector3 RotationMenu = {-36.0f, 0.0f, 0.0f};
+    Vector3 ScaleMenu = {1.0f, 1.0f, 1.0f};
+    Vector3 PositionGame = {0.0f, 3.0f, 4.0f};
+    Vector3 RotationGame = {-36.0f, 0.0f, 0.0f};
+    Vector3 ScaleGame = {1.0f, 1.0f, 1.0f};
 } Config;
 
 struct ChatObject {
@@ -41,6 +44,7 @@ static const int maxVisibleObjects = 24;
 static long long lastUpdate = 0;
 static bool needUpdate = false;
 static bool threadStarted = false;
+static bool isInMenu = false;
 
 void UpdateList(){
     if(!chatObjectsToAdd.empty())
@@ -121,13 +125,22 @@ void OnLoadAssetComplete(Il2CppObject* asset){
     helper->RunMethod(&customUIObject, nullptr, helper->class_get_method_from_name(helper->GetClassFromName("UnityEngine", "Object"), "Instantiate", 1), asset);
 
     Il2CppObject* objectTransform;
+
     helper->RunMethod(&objectTransform, customUIObject, "get_transform");
-
-    helper->RunMethod(objectTransform, "set_position", &Config.Position);
-
-    helper->RunMethod(objectTransform, "set_eulerAngles", &Config.Rotation);
-   
-    helper->RunMethod(objectTransform, "set_localScale", &Config.Scale);
+    Vector3 scale;
+    if(isInMenu){
+        helper->RunMethod(objectTransform, "set_position", &Config.PositionMenu);
+        helper->RunMethod(objectTransform, "set_eulerAngles", &Config.RotationMenu);
+        scale = Config.ScaleMenu;
+    }else{
+        helper->RunMethod(objectTransform, "set_position", &Config.PositionGame);
+        helper->RunMethod(objectTransform, "set_eulerAngles", &Config.RotationGame);
+        scale = Config.ScaleGame;
+    }
+    scale.x *= 0.0025f;
+    scale.y *= 0.0025f;
+    scale.z *= 0.0025f;
+    helper->RunMethod(objectTransform, "set_localScale", &scale);
 
     UnityHelper::SetGameObjectActive(helper, customUIObject, true);
     chatObject_Template = UnityHelper::GetComponentInChildren(helper, customUIObject, helper->GetClassFromName("UnityEngine", "RectTransform"), "ChatObject_Template");
@@ -166,7 +179,8 @@ MAKE_HOOK_OFFSETLESS(SceneManager_SetActiveScene, bool, int scene)
     helper->RunStaticMethod(&nameObject, helper->GetClassFromName("UnityEngine.SceneManagement", "Scene"), "GetNameInternal", &scene);
     const char* name = to_utf8(csstrtostr(nameObject)).c_str();
     log(INFO, "Scene: %s", name);
-    if(strcmp(name, "MenuCore") == 0 || strcmp(name, "GameCore") == 0) {
+    isInMenu = strcmp(name, "MenuCore") == 0;
+    if(isInMenu || strcmp(name, "GameCore") == 0) {
         if(assetBundle == nullptr){
             UnityAssetLoader::LoadAssetBundleFromFileAsync("/sdcard/Android/data/com.beatgames.beatsaber/files/uis/chatUI.qui", (UnityAssetLoader_OnLoadAssetBundleCompleteFunction*)OnLoadAssetBundleComplete);
         }else{
@@ -178,17 +192,6 @@ MAKE_HOOK_OFFSETLESS(SceneManager_SetActiveScene, bool, int scene)
 
 void QuestUIOnInitialized(){}
 
-void InitHooks(){
-    sleep(1);
-    helper = new IL2CPP_Helper();
-    helper->Initialize();
-    
-    INSTALL_HOOK_OFFSETLESS(Camera_FireOnPostRender, helper->class_get_method_from_name(helper->GetClassFromName("UnityEngine", "Camera"), "FireOnPostRender", 1));
-    INSTALL_HOOK_OFFSETLESS(SceneManager_SetActiveScene, helper->class_get_method_from_name(helper->GetClassFromName("UnityEngine.SceneManagement", "SceneManager"), "SetActiveScene", 1));
-    
-    log(INFO, "Successfully installed ChatUI!");
-}
-
 void SaveConfig() {
     log(INFO, "Saving Configuration...");
     config_doc.RemoveAllMembers();
@@ -197,21 +200,44 @@ void SaveConfig() {
     config_doc.AddMember("Nick", string(Config.Nick), allocator);
     config_doc.AddMember("OAuth", string(Config.OAuth), allocator);
     config_doc.AddMember("Channel", string(Config.Channel), allocator);
-    rapidjson::Value positionValue(rapidjson::kObjectType);
-    positionValue.AddMember("X", Config.Position.x, allocator);
-    positionValue.AddMember("Y", Config.Position.y, allocator);
-    positionValue.AddMember("Z", Config.Position.z, allocator);
-    config_doc.AddMember("Position", positionValue, allocator);
-    rapidjson::Value rotationValue(rapidjson::kObjectType);
-    rotationValue.AddMember("X", Config.Rotation.x, allocator);
-    rotationValue.AddMember("Y", Config.Rotation.y, allocator);
-    rotationValue.AddMember("Z", Config.Rotation.z, allocator);
-    config_doc.AddMember("Rotation", rotationValue, allocator);
-    rapidjson::Value scaleValue(rapidjson::kObjectType);
-    scaleValue.AddMember("X", Config.Scale.x, allocator);
-    scaleValue.AddMember("Y", Config.Scale.y, allocator);
-    scaleValue.AddMember("Z", Config.Scale.z, allocator);
-    config_doc.AddMember("Scale", scaleValue, allocator);
+    rapidjson::Value menuValue(rapidjson::kObjectType);
+    {
+        rapidjson::Value positionValue(rapidjson::kObjectType);
+        positionValue.AddMember("X", Config.PositionMenu.x, allocator);
+        positionValue.AddMember("Y", Config.PositionMenu.y, allocator);
+        positionValue.AddMember("Z", Config.PositionMenu.z, allocator);
+        menuValue.AddMember("Position", positionValue, allocator);
+        rapidjson::Value rotationValue(rapidjson::kObjectType);
+        rotationValue.AddMember("X", Config.RotationMenu.x, allocator);
+        rotationValue.AddMember("Y", Config.RotationMenu.y, allocator);
+        rotationValue.AddMember("Z", Config.RotationMenu.z, allocator);
+        menuValue.AddMember("Rotation", rotationValue, allocator);
+        rapidjson::Value scaleValue(rapidjson::kObjectType);
+        scaleValue.AddMember("X", Config.ScaleMenu.x, allocator);
+        scaleValue.AddMember("Y", Config.ScaleMenu.y, allocator);
+        scaleValue.AddMember("Z", Config.ScaleMenu.z, allocator);
+        menuValue.AddMember("Scale", scaleValue, allocator);
+        config_doc.AddMember("Menu", menuValue, allocator);
+    }
+    rapidjson::Value gameValue(rapidjson::kObjectType);
+    {
+        rapidjson::Value positionValue(rapidjson::kObjectType);
+        positionValue.AddMember("X", Config.PositionGame.x, allocator);
+        positionValue.AddMember("Y", Config.PositionGame.y, allocator);
+        positionValue.AddMember("Z", Config.PositionGame.z, allocator);
+        gameValue.AddMember("Position", positionValue, allocator);
+        rapidjson::Value rotationValue(rapidjson::kObjectType);
+        rotationValue.AddMember("X", Config.RotationGame.x, allocator);
+        rotationValue.AddMember("Y", Config.RotationGame.y, allocator);
+        rotationValue.AddMember("Z", Config.RotationGame.z, allocator);
+        gameValue.AddMember("Rotation", rotationValue, allocator);
+        rapidjson::Value scaleValue(rapidjson::kObjectType);
+        scaleValue.AddMember("X", Config.ScaleGame.x, allocator);
+        scaleValue.AddMember("Y", Config.ScaleGame.y, allocator);
+        scaleValue.AddMember("Z", Config.ScaleGame.z, allocator);
+        gameValue.AddMember("Scale", scaleValue, allocator);
+        config_doc.AddMember("Game", gameValue, allocator);
+    }
     Configuration::Write();
     log(INFO, "Saved Configuration!");
 }
@@ -241,36 +267,82 @@ bool LoadConfig() {
     }else{
         foundEverything = false;
     }
-    if(config_doc.HasMember("Position") && config_doc["Position"].IsObject()){
-        rapidjson::Value positionValue = config_doc["Position"].GetObject();
-        if(positionValue.HasMember("X") && positionValue["X"].IsFloat() && positionValue.HasMember("Y") && positionValue["Y"].IsFloat() && positionValue.HasMember("Z") && positionValue["Z"].IsFloat()){
-            Config.Position.x = positionValue["X"].GetFloat();
-            Config.Position.y = positionValue["Y"].GetFloat();
-            Config.Position.z = positionValue["Z"].GetFloat();
+    if(config_doc.HasMember("Menu") && config_doc["Menu"].IsObject()){
+        rapidjson::Value menuValue = config_doc["Menu"].GetObject();
+        if(menuValue.HasMember("Position") && menuValue["Position"].IsObject()){
+            rapidjson::Value positionValue = menuValue["Position"].GetObject();
+            if(positionValue.HasMember("X") && positionValue["X"].IsFloat() && positionValue.HasMember("Y") && positionValue["Y"].IsFloat() && positionValue.HasMember("Z") && positionValue["Z"].IsFloat()){
+                Config.PositionMenu.x = positionValue["X"].GetFloat();
+                Config.PositionMenu.y = positionValue["Y"].GetFloat();
+                Config.PositionMenu.z = positionValue["Z"].GetFloat();
+            }else{
+                foundEverything = false;
+            }
+        }else{
+            foundEverything = false;
+        }
+        if(menuValue.HasMember("Rotation") && menuValue["Rotation"].IsObject()){
+            rapidjson::Value rotationValue = menuValue["Rotation"].GetObject();
+            if(rotationValue.HasMember("X") && rotationValue["X"].IsFloat() && rotationValue.HasMember("Y") && rotationValue["Y"].IsFloat() && rotationValue.HasMember("Z") && rotationValue["Z"].IsFloat()){
+                Config.RotationMenu.x = rotationValue["X"].GetFloat();
+                Config.RotationMenu.y = rotationValue["Y"].GetFloat();
+                Config.RotationMenu.z = rotationValue["Z"].GetFloat();
+            }else{
+                foundEverything = false;
+            }
+        }else{
+            foundEverything = false;
+        }
+        if(menuValue.HasMember("Scale") && menuValue["Scale"].IsObject()){
+            rapidjson::Value scaleValue = menuValue["Scale"].GetObject();
+            if(scaleValue.HasMember("X") && scaleValue["X"].IsFloat() && scaleValue.HasMember("Y") && scaleValue["Y"].IsFloat() && scaleValue.HasMember("Z") && scaleValue["Z"].IsFloat()){
+                Config.ScaleMenu.x = scaleValue["X"].GetFloat();
+                Config.ScaleMenu.y = scaleValue["Y"].GetFloat();
+                Config.ScaleMenu.z = scaleValue["Z"].GetFloat();
+            }else{
+                foundEverything = false;
+            }
         }else{
             foundEverything = false;
         }
     }else{
         foundEverything = false;
     }
-    if(config_doc.HasMember("Rotation") && config_doc["Rotation"].IsObject()){
-        rapidjson::Value rotationValue = config_doc["Rotation"].GetObject();
-        if(rotationValue.HasMember("X") && rotationValue["X"].IsFloat() && rotationValue.HasMember("Y") && rotationValue["Y"].IsFloat() && rotationValue.HasMember("Z") && rotationValue["Z"].IsFloat()){
-            Config.Rotation.x = rotationValue["X"].GetFloat();
-            Config.Rotation.y = rotationValue["Y"].GetFloat();
-            Config.Rotation.z = rotationValue["Z"].GetFloat();
+    if(config_doc.HasMember("Game") && config_doc["Game"].IsObject()){
+        rapidjson::Value gameValue = config_doc["Game"].GetObject();
+        if(gameValue.HasMember("Position") && gameValue["Position"].IsObject()){
+            rapidjson::Value positionValue = gameValue["Position"].GetObject();
+            if(positionValue.HasMember("X") && positionValue["X"].IsFloat() && positionValue.HasMember("Y") && positionValue["Y"].IsFloat() && positionValue.HasMember("Z") && positionValue["Z"].IsFloat()){
+                Config.PositionGame.x = positionValue["X"].GetFloat();
+                Config.PositionGame.y = positionValue["Y"].GetFloat();
+                Config.PositionGame.z = positionValue["Z"].GetFloat();
+            }else{
+                foundEverything = false;
+            }
         }else{
             foundEverything = false;
         }
-    }else{
-        foundEverything = false;
-    }
-    if(config_doc.HasMember("Scale") && config_doc["Scale"].IsObject()){
-        rapidjson::Value scaleValue = config_doc["Scale"].GetObject();
-        if(scaleValue.HasMember("X") && scaleValue["X"].IsFloat() && scaleValue.HasMember("Y") && scaleValue["Y"].IsFloat() && scaleValue.HasMember("Z") && scaleValue["Z"].IsFloat()){
-            Config.Scale.x = scaleValue["X"].GetFloat();
-            Config.Scale.y = scaleValue["Y"].GetFloat();
-            Config.Scale.z = scaleValue["Z"].GetFloat();
+        if(gameValue.HasMember("Rotation") && gameValue["Rotation"].IsObject()){
+            rapidjson::Value rotationValue = gameValue["Rotation"].GetObject();
+            if(rotationValue.HasMember("X") && rotationValue["X"].IsFloat() && rotationValue.HasMember("Y") && rotationValue["Y"].IsFloat() && rotationValue.HasMember("Z") && rotationValue["Z"].IsFloat()){
+                Config.RotationGame.x = rotationValue["X"].GetFloat();
+                Config.RotationGame.y = rotationValue["Y"].GetFloat();
+                Config.RotationGame.z = rotationValue["Z"].GetFloat();
+            }else{
+                foundEverything = false;
+            }
+        }else{
+            foundEverything = false;
+        }
+        if(gameValue.HasMember("Scale") && gameValue["Scale"].IsObject()){
+            rapidjson::Value scaleValue = gameValue["Scale"].GetObject();
+            if(scaleValue.HasMember("X") && scaleValue["X"].IsFloat() && scaleValue.HasMember("Y") && scaleValue["Y"].IsFloat() && scaleValue.HasMember("Z") && scaleValue["Z"].IsFloat()){
+                Config.ScaleGame.x = scaleValue["X"].GetFloat();
+                Config.ScaleGame.y = scaleValue["Y"].GetFloat();
+                Config.ScaleGame.z = scaleValue["Z"].GetFloat();
+            }else{
+                foundEverything = false;
+            }
         }else{
             foundEverything = false;
         }
@@ -284,6 +356,18 @@ bool LoadConfig() {
     return false;
 }
 
+static void* libil2cpphandle;
+MAKE_HOOK_OFFSETLESS(init_hook, void, const char* domain_name) {
+    dlclose(libil2cpphandle);
+    init_hook(domain_name);
+    
+    
+    INSTALL_HOOK_OFFSETLESS(Camera_FireOnPostRender, helper->class_get_method_from_name(helper->GetClassFromName("UnityEngine", "Camera"), "FireOnPostRender", 1));
+    INSTALL_HOOK_OFFSETLESS(SceneManager_SetActiveScene, helper->class_get_method_from_name(helper->GetClassFromName("UnityEngine.SceneManagement", "SceneManager"), "SetActiveScene", 1));
+    
+    log(INFO, "Successfully installed ChatUI!");
+}
+
 __attribute__((constructor)) void lib_main()
 {
     #ifdef __aarch64__
@@ -292,6 +376,9 @@ __attribute__((constructor)) void lib_main()
     if(!LoadConfig())
         SaveConfig();
     log(INFO, "Starting ChatUI installation...");
-    thread initHooksThread(InitHooks);
-    initHooksThread.detach();
+
+    libil2cpphandle = dlopen("/data/app/com.beatgames.beatsaber-1/lib/arm64/libil2cpp.so", RTLD_LOCAL | RTLD_LAZY);
+    helper = new IL2CPP_Helper();
+    helper->Initialize();
+    INSTALL_HOOK_DIRECT(init_hook,  helper->init);
 }

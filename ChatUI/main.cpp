@@ -1,6 +1,8 @@
 #include <vector>
+#include <map>
 #include <thread>
 #include <chrono>
+#include <iomanip>
 
 #define RAPIDJSON_HAS_STDSTRING 1
 
@@ -17,10 +19,10 @@ static struct Config_t {
     char* Nick = "";
     char* OAuth = "";
     char* Channel = "";
-    Vector3 PositionMenu = {0.0f, 3.0f, 4.0f};
+    Vector3 PositionMenu = {0.0f, 4.4f, 4.0f};
     Vector3 RotationMenu = {-36.0f, 0.0f, 0.0f};
     Vector3 ScaleMenu = {1.0f, 1.0f, 1.0f};
-    Vector3 PositionGame = {0.0f, 3.0f, 4.0f};
+    Vector3 PositionGame = {0.0f, 4.0f, 4.0f};
     Vector3 RotationGame = {-36.0f, 0.0f, 0.0f};
     Vector3 ScaleGame = {1.0f, 1.0f, 1.0f};
 } Config;
@@ -30,10 +32,20 @@ struct ChatObject {
     Il2CppObject* GameObject;
 };
 
+template <typename T>
+inline string int_to_hex(T val, size_t width=sizeof(T)*2)
+{
+    stringstream ss;
+    ss << "#" << setfill('0') << setw(width) << hex << (val|0) << "ff";
+    return ss.str();
+}
+
 static rapidjson::Document& config_doc = Configuration::config;
 
 static IL2CPP_Helper* helper = nullptr;
 static TwitchIRCClient* client = nullptr;
+static map<string, string> usersColorCache;
+
 static Il2CppObject* assetBundle = nullptr;
 static Il2CppObject* customUIObject = nullptr;
 static Il2CppObject* chatObject_Template = nullptr;
@@ -93,9 +105,11 @@ void AddChatObject(string text){
 }
 
 void OnChatMessage(IRCMessage message, TwitchIRCClient* client)
-{    
-    string text = message.prefix.nick + ": " + message.parameters.at(message.parameters.size() - 1);
-    
+{
+    if(usersColorCache.find(message.prefix.nick) == usersColorCache.end()){
+        usersColorCache.insert(pair<string, string>(message.prefix.nick, int_to_hex(rand() % 0x1000000, 6)));
+    }
+    string text = "<color=" + usersColorCache[message.prefix.nick] + ">" + message.prefix.nick + "</color>: " + message.parameters.at(message.parameters.size() - 1);
     log(INFO, "Twitch Chat: %s", text.c_str());
     AddChatObject(text);
 }

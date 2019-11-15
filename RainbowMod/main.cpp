@@ -448,8 +448,6 @@ void QuestUIOnInitialized(){
     }
 }
 
-
-
 void SaveConfig() {
     log(INFO, "Saving Configuration...");
     config_doc.RemoveAllMembers();
@@ -568,5 +566,5 @@ __attribute__((constructor)) void lib_main()
     libil2cpphandle = dlopen("/data/app/com.beatgames.beatsaber-1/lib/arm64/libil2cpp.so", RTLD_LOCAL | RTLD_LAZY);
     helper = new IL2CPP_Helper();
     helper->Initialize();
-    INSTALL_HOOK_DIRECT(init_hook,  helper->init);
+    INSTALL_HOOK_DIRECT(init_hook, helper->init);
 }

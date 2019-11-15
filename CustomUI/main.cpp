@@ -62,10 +62,12 @@ void QuestUIOnInitialized(){
         UnityAssetLoader::LoadAssetFromAssetBundleAsync(assetBundle, (UnityAssetLoader_OnLoadAssetCompleteFunction*)OnLoadAssetComplete);
     }
 }
-void InitHooks(){
-    sleep(1);
-    helper = new IL2CPP_Helper();
-    helper->Initialize();
+static void* libil2cpphandle;
+MAKE_HOOK_OFFSETLESS(init_hook, void, const char* domain_name) {
+    dlclose(libil2cpphandle);
+    init_hook(domain_name);
+    
+    
     
     QuestUI::Initialize("CustomUI", QuestUIOnInitialized);
 
@@ -78,6 +80,8 @@ __attribute__((constructor)) void lib_main()
     log(INFO, "Is 64 bit!");
     #endif
 
-    std::thread initHooksThread(InitHooks);
-    initHooksThread.detach();
+    libil2cpphandle = dlopen("/data/app/com.beatgames.beatsaber-1/lib/arm64/libil2cpp.so", RTLD_LOCAL | RTLD_LAZY);
+    helper = new IL2CPP_Helper();
+    helper->Initialize();
+    INSTALL_HOOK_DIRECT(init_hook, helper->init);
 }

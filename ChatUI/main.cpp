@@ -25,6 +25,7 @@ static struct Config_t {
     Vector3 PositionGame = {0.0f, 4.0f, 4.0f};
     Vector3 RotationGame = {-36.0f, 0.0f, 0.0f};
     Vector3 ScaleGame = {1.0f, 1.0f, 1.0f};
+    vector<string>* BlackList = nullptr;
 } Config;
 
 struct ChatObject {
@@ -106,8 +107,11 @@ void AddChatObject(string text){
 
 void OnChatMessage(IRCMessage message, TwitchIRCClient* client)
 {
+    for(string name : *Config.BlackList)
+        if(name.compare(message.prefix.nick) == 0)
+            return;
     if(usersColorCache.find(message.prefix.nick) == usersColorCache.end()){
-        usersColorCache.insert(pair<string, string>(message.prefix.nick, int_to_hex(rand() % 0x1000000, 6)));
+            usersColorCache.insert(pair<string, string>(message.prefix.nick, int_to_hex(rand() % 0x1000000, 6)));
     }
     string text = "<color=" + usersColorCache[message.prefix.nick] + ">" + message.prefix.nick + "</color>: " + message.parameters.at(message.parameters.size() - 1);
     log(INFO, "Twitch Chat: %s", text.c_str());
@@ -252,6 +256,15 @@ void SaveConfig() {
         gameValue.AddMember("Scale", scaleValue, allocator);
         config_doc.AddMember("Game", gameValue, allocator);
     }
+    rapidjson::Value blackList(rapidjson::kArrayType);
+    {
+        for(string name : *Config.BlackList){
+            rapidjson::Value nameValue;
+            nameValue.SetString(name.c_str(), name.length(), allocator);
+            blackList.PushBack(nameValue, allocator);
+        }
+        config_doc.AddMember("BlackList", blackList, allocator);
+    }
     Configuration::Write();
     log(INFO, "Saved Configuration!");
 }
@@ -363,6 +376,25 @@ bool LoadConfig() {
     }else{
         foundEverything = false;
     }
+    if(Config.BlackList == nullptr)
+        Config.BlackList = new vector<string>();
+    for(string name : *Config.BlackList){
+        free((void*)name.c_str());
+    }
+    Config.BlackList->clear();
+    if(config_doc.HasMember("BlackList") && config_doc["BlackList"].IsArray()){
+        for (rapidjson::SizeType i = 0; i < config_doc["BlackList"].Size(); i++){
+            if(config_doc["BlackList"][i].IsString()){
+                char* buffer = (char*)malloc(config_doc["BlackList"][i].GetStringLength());
+                strcpy(buffer, config_doc["BlackList"][i].GetString());
+                Config.BlackList->push_back(string(buffer));
+            }
+        }
+    }else{
+        Config.BlackList->push_back(string("dootybot"));
+        Config.BlackList->push_back(string("nightbot"));
+        foundEverything = false;
+    }
     if(foundEverything){
         log(INFO, "Loaded Configuration!");
         return true;
@@ -374,7 +406,6 @@ static void* libil2cpphandle;
 MAKE_HOOK_OFFSETLESS(init_hook, void, const char* domain_name) {
     dlclose(libil2cpphandle);
     init_hook(domain_name);
-    
     
     INSTALL_HOOK_OFFSETLESS(Camera_FireOnPostRender, helper->class_get_method_from_name(helper->GetClassFromName("UnityEngine", "Camera"), "FireOnPostRender", 1));
     INSTALL_HOOK_OFFSETLESS(SceneManager_SetActiveScene, helper->class_get_method_from_name(helper->GetClassFromName("UnityEngine.SceneManagement", "SceneManager"), "SetActiveScene", 1));

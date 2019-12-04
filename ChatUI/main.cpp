@@ -43,7 +43,6 @@ inline string int_to_hex(T val, size_t width=sizeof(T)*2)
 
 static rapidjson::Document& config_doc = Configuration::config;
 
-static IL2CPP_Helper* helper = nullptr;
 static TwitchIRCClient* client = nullptr;
 static map<string, string> usersColorCache;
 
@@ -58,6 +57,9 @@ static long long lastUpdate = 0;
 static bool needUpdate = false;
 static bool threadStarted = false;
 static bool isInMenu = false;
+
+static bool isLoadingAsset = false;
+static bool reloadAsset = false;
 
 void UpdateList(){
     if(!chatObjectsToAdd.empty())
@@ -79,20 +81,20 @@ void UpdateList(){
                     Vector3 lastChatObjectPosition;
                     Vector3 lastChatObjectSize;
                     if(lastChatObject != nullptr && lastChatObject->GameObject != nullptr){
-                        helper->RunMethod(&lastChatObjectPosition, lastChatObject->GameObject, "get_localPosition");
-                        helper->RunMethod(&lastChatObjectSize, lastChatObject->GameObject, "get_sizeDelta");
+                        il2cpp_utils::RunMethod(&lastChatObjectPosition, lastChatObject->GameObject, "get_localPosition");
+                        il2cpp_utils::RunMethod(&lastChatObjectSize, lastChatObject->GameObject, "get_sizeDelta");
                     }
-                    helper->RunMethod(&chatObject->GameObject, nullptr, helper->class_get_method_from_name(helper->GetClassFromName("UnityEngine", "Object"), "Instantiate", 1), chatObject_Template);
-                    helper->RunMethod(chatObject->GameObject, "set_name", helper->createcsstr("ChatObject"));
-                    UnityHelper::SetSameParent(helper, chatObject->GameObject, chatObject_Template);
-                    UnityHelper::SetGameObjectActive(helper, chatObject->GameObject, true);
-                    UnityHelper::SetButtonText(helper, chatObject->GameObject, chatObject->Text);
+                    il2cpp_utils::RunMethod(&chatObject->GameObject, il2cpp_utils::GetClassFromName("UnityEngine", "Object"), "Instantiate", chatObject_Template);
+                    il2cpp_utils::RunMethod(chatObject->GameObject, "set_name", il2cpp_utils::createcsstr("ChatObject"));
+                    UnityHelper::SetSameParent(chatObject->GameObject, chatObject_Template);
+                    UnityHelper::SetGameObjectActive(chatObject->GameObject, true);
+                    UnityHelper::SetButtonText(chatObject->GameObject, chatObject->Text);
                 }
             }
         while(maxVisibleObjects<chatObjects.size()){
             ChatObject* chatObject = chatObjects[0];
             if(chatObject->GameObject != nullptr)
-                helper->RunStaticMethod(helper->GetClassFromName("UnityEngine", "Object"), "Destroy", UnityHelper::GetGameObject(helper, chatObject->GameObject));
+               il2cpp_utils::RunMethod(il2cpp_utils::GetClassFromName("UnityEngine", "Object"), "Destroy", UnityHelper::GetGameObject(chatObject->GameObject));
             delete chatObject;
             chatObjects.erase(chatObjects.begin());
         }
@@ -140,29 +142,36 @@ void ConnectTwitch(){
 }
 
 void OnLoadAssetComplete(Il2CppObject* asset){
-    helper->RunMethod(&customUIObject, nullptr, helper->class_get_method_from_name(helper->GetClassFromName("UnityEngine", "Object"), "Instantiate", 1), asset);
+    if(reloadAsset){
+        reloadAsset = false;
+        log(INFO, "Reloading Asset!");
+        UnityAssetLoader::LoadAssetFromAssetBundleAsync(assetBundle, (UnityAssetLoader_OnLoadAssetCompleteFunction*)OnLoadAssetComplete);
+        return;
+    }
+    isLoadingAsset = false;
+    il2cpp_utils::RunMethod(&customUIObject, il2cpp_utils::GetClassFromName("UnityEngine", "Object"), "Instantiate", asset);
 
     Il2CppObject* objectTransform;
 
-    helper->RunMethod(&objectTransform, customUIObject, "get_transform");
+    il2cpp_utils::RunMethod(&objectTransform, customUIObject, "get_transform");
     Vector3 scale;
     if(isInMenu){
-        helper->RunMethod(objectTransform, "set_position", &Config.PositionMenu);
-        helper->RunMethod(objectTransform, "set_eulerAngles", &Config.RotationMenu);
+        il2cpp_utils::RunMethod(objectTransform, "set_position", &Config.PositionMenu);
+        il2cpp_utils::RunMethod(objectTransform, "set_eulerAngles", &Config.RotationMenu);
         scale = Config.ScaleMenu;
     }else{
-        helper->RunMethod(objectTransform, "set_position", &Config.PositionGame);
-        helper->RunMethod(objectTransform, "set_eulerAngles", &Config.RotationGame);
+        il2cpp_utils::RunMethod(objectTransform, "set_position", &Config.PositionGame);
+        il2cpp_utils::RunMethod(objectTransform, "set_eulerAngles", &Config.RotationGame);
         scale = Config.ScaleGame;
     }
     scale.x *= 0.0025f;
     scale.y *= 0.0025f;
     scale.z *= 0.0025f;
-    helper->RunMethod(objectTransform, "set_localScale", &scale);
+    il2cpp_utils::RunMethod(objectTransform, "set_localScale", &scale);
 
-    UnityHelper::SetGameObjectActive(helper, customUIObject, true);
-    chatObject_Template = UnityHelper::GetComponentInChildren(helper, customUIObject, helper->GetClassFromName("UnityEngine", "RectTransform"), "ChatObject_Template");
-    UnityHelper::SetGameObjectActive(helper, chatObject_Template, false);
+    UnityHelper::SetGameObjectActive(customUIObject, true);
+    chatObject_Template = UnityHelper::GetComponentInChildren(customUIObject, il2cpp_utils::GetClassFromName("UnityEngine", "RectTransform"), "ChatObject_Template");
+    UnityHelper::SetGameObjectActive(chatObject_Template, false);
     needUpdate = true;
     if(!threadStarted){
         threadStarted = true;
@@ -173,6 +182,7 @@ void OnLoadAssetComplete(Il2CppObject* asset){
 
 void OnLoadAssetBundleComplete(Il2CppObject* assetBundleArg){
     assetBundle = assetBundleArg;
+    isLoadingAsset = true;
     UnityAssetLoader::LoadAssetFromAssetBundleAsync(assetBundle, (UnityAssetLoader_OnLoadAssetCompleteFunction*)OnLoadAssetComplete);
 }
 
@@ -189,20 +199,25 @@ MAKE_HOOK_OFFSETLESS(SceneManager_SetActiveScene, bool, int scene)
         for(int i = 0; i<chatObjects.size(); i++){
             chatObjects[i]->GameObject = nullptr;
         }
-        helper->RunStaticMethod(customUIObject, "Destroy", customUIObject);
+        il2cpp_utils::RunMethod(il2cpp_utils::GetClassFromName("UnityEngine", "Object"), "Destroy", customUIObject);
         customUIObject = nullptr;
         log(INFO, "Destroyed ChatUI!");
     }
     Il2CppString* nameObject;
-    helper->RunStaticMethod(&nameObject, helper->GetClassFromName("UnityEngine.SceneManagement", "Scene"), "GetNameInternal", &scene);
+    il2cpp_utils::RunMethod(&nameObject, il2cpp_utils::GetClassFromName("UnityEngine.SceneManagement", "Scene"), "GetNameInternal", &scene);
     const char* name = to_utf8(csstrtostr(nameObject)).c_str();
     log(INFO, "Scene: %s", name);
     isInMenu = strcmp(name, "MenuCore") == 0;
     if(isInMenu || strcmp(name, "GameCore") == 0) {
         if(assetBundle == nullptr){
             UnityAssetLoader::LoadAssetBundleFromFileAsync("/sdcard/Android/data/com.beatgames.beatsaber/files/uis/chatUI.qui", (UnityAssetLoader_OnLoadAssetBundleCompleteFunction*)OnLoadAssetBundleComplete);
-        }else{
-            UnityAssetLoader::LoadAssetFromAssetBundleAsync(assetBundle, (UnityAssetLoader_OnLoadAssetCompleteFunction*)OnLoadAssetComplete);
+        }else {
+            if(isLoadingAsset){
+                reloadAsset = true;
+            }else{
+                isLoadingAsset = true;
+                UnityAssetLoader::LoadAssetFromAssetBundleAsync(assetBundle, (UnityAssetLoader_OnLoadAssetCompleteFunction*)OnLoadAssetComplete);
+            }
         }
     }
     return SceneManager_SetActiveScene(scene);
@@ -402,28 +417,14 @@ bool LoadConfig() {
     return false;
 }
 
-static void* libil2cpphandle;
-MAKE_HOOK_OFFSETLESS(init_hook, void, const char* domain_name) {
-    dlclose(libil2cpphandle);
-    init_hook(domain_name);
-    
-    INSTALL_HOOK_OFFSETLESS(Camera_FireOnPostRender, helper->class_get_method_from_name(helper->GetClassFromName("UnityEngine", "Camera"), "FireOnPostRender", 1));
-    INSTALL_HOOK_OFFSETLESS(SceneManager_SetActiveScene, helper->class_get_method_from_name(helper->GetClassFromName("UnityEngine.SceneManagement", "SceneManager"), "SetActiveScene", 1));
-    
-    log(INFO, "Successfully installed ChatUI!");
-}
-
-__attribute__((constructor)) void lib_main()
+extern "C" void load()
 {
-    #ifdef __aarch64__
-    log(INFO, "Is 64 bit!");
-    #endif
     if(!LoadConfig())
         SaveConfig();
     log(INFO, "Starting ChatUI installation...");
-
-    libil2cpphandle = dlopen("/data/app/com.beatgames.beatsaber-1/lib/arm64/libil2cpp.so", RTLD_LOCAL | RTLD_LAZY);
-    helper = new IL2CPP_Helper();
-    helper->Initialize();
-    INSTALL_HOOK_DIRECT(init_hook,  helper->init);
+    il2cpp_functions::Init();
+    INSTALL_HOOK_OFFSETLESS(Camera_FireOnPostRender, il2cpp_functions::class_get_method_from_name(il2cpp_utils::GetClassFromName("UnityEngine", "Camera"), "FireOnPostRender", 1));
+    INSTALL_HOOK_OFFSETLESS(SceneManager_SetActiveScene, il2cpp_functions::class_get_method_from_name(il2cpp_utils::GetClassFromName("UnityEngine.SceneManagement", "SceneManager"), "SetActiveScene", 1));
+    
+    log(INFO, "Successfully installed ChatUI!");
 }

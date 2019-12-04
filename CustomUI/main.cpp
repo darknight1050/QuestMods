@@ -20,8 +20,6 @@
 
 using namespace std;
 
-static IL2CPP_Helper* helper = nullptr;
-
 static Il2CppObject* assetBundle = nullptr;
 static Il2CppObject* customUIObject = nullptr;
 
@@ -30,8 +28,8 @@ static int counter = 0;
 void UpdateTextCounter(){
     char text[64];
     sprintf(text, "%d", counter);
-    Il2CppObject* textObject = UnityHelper::GetComponentInChildren(helper, customUIObject, helper->GetClassFromName("TMPro", "TextMeshProUGUI"), "TextCounter");
-    helper->RunMethod(textObject, "set_text", helper->createcsstr(text));
+    Il2CppObject* textObject = UnityHelper::GetComponentInChildren(customUIObject, il2cpp_utils::GetClassFromName("TMPro", "TextMeshProUGUI"), "TextCounter");
+    il2cpp_utils::RunMethod(textObject, "set_text", il2cpp_utils::createcsstr(text));
 }
 
 
@@ -42,10 +40,10 @@ void ButtonCounterClick(Il2CppObject* button){
 }
 
 void OnLoadAssetComplete(Il2CppObject* asset){
-    helper->RunMethod(&customUIObject, nullptr, helper->class_get_method_from_name(helper->GetClassFromName("UnityEngine", "Object"), "Instantiate", 1), asset);
-    UnityHelper::SetParent(helper, customUIObject, QuestUI::GetQuestUIModInfo().Panel);
+    il2cpp_utils::RunMethod(&customUIObject, il2cpp_utils::GetClassFromName("UnityEngine", "Object"), "Instantiate", asset);
+    UnityHelper::SetParent(customUIObject, QuestUI::GetQuestUIModInfo().Panel);
 
-    UnityHelper::AddButtonOnClick(helper, QuestUI::GetQuestUIInfo()->ButtonBinder, customUIObject, "ButtonCounter", (UnityHelper::ButtonOnClickFunction*)ButtonCounterClick);
+    UnityHelper::AddButtonOnClick(QuestUI::GetQuestUIInfo()->ButtonBinder, customUIObject, "ButtonCounter", (UnityHelper::ButtonOnClickFunction*)ButtonCounterClick);
 
     UpdateTextCounter();
 }
@@ -62,26 +60,11 @@ void QuestUIOnInitialized(){
         UnityAssetLoader::LoadAssetFromAssetBundleAsync(assetBundle, (UnityAssetLoader_OnLoadAssetCompleteFunction*)OnLoadAssetComplete);
     }
 }
-static void* libil2cpphandle;
-MAKE_HOOK_OFFSETLESS(init_hook, void, const char* domain_name) {
-    dlclose(libil2cpphandle);
-    init_hook(domain_name);
-    
-    
-    
+
+extern "C" void load()
+{
+    il2cpp_functions::Init();
     QuestUI::Initialize("CustomUI", QuestUIOnInitialized);
 
     log(INFO, "Successfully installed CustomUI!");
-}
-
-__attribute__((constructor)) void lib_main()
-{
-    #ifdef __aarch64__
-    log(INFO, "Is 64 bit!");
-    #endif
-
-    libil2cpphandle = dlopen("/data/app/com.beatgames.beatsaber-1/lib/arm64/libil2cpp.so", RTLD_LOCAL | RTLD_LAZY);
-    helper = new IL2CPP_Helper();
-    helper->Initialize();
-    INSTALL_HOOK_DIRECT(init_hook, helper->init);
 }

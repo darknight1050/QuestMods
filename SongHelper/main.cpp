@@ -12,8 +12,6 @@
 
 using namespace std;
 
-static IL2CPP_Helper* helper = nullptr;
-
 static bool isInMenu = false;
 
 static long long LastPrimaryThumbstickUp = 0;
@@ -64,10 +62,8 @@ namespace Buttons
 }
 
 Il2CppObject* GetFirstObjectOfType(Il2CppClass* klass){
-    Il2CppClass* resourcesClass = helper->GetClassFromName("UnityEngine", "Resources");
-    const MethodInfo* resources_FindObjectsOfTypeAllMethod = helper->class_get_method_from_name(resourcesClass, "FindObjectsOfTypeAll", 1);
     Array<Il2CppObject*>* objects;
-    helper->RunMethod(&objects, nullptr, resources_FindObjectsOfTypeAllMethod, helper->type_get_object(helper->class_get_type(klass)));
+    il2cpp_utils::RunMethod(&objects, il2cpp_utils::GetClassFromName("UnityEngine", "Resources"), "FindObjectsOfTypeAll", il2cpp_functions::type_get_object(il2cpp_functions::class_get_type(klass)));
     if (objects != nullptr)
     {
         return objects->values[0];
@@ -81,7 +77,7 @@ Il2CppObject* GetFirstObjectOfType(Il2CppClass* klass){
 MAKE_HOOK_OFFSETLESS(SceneManager_SetActiveScene, bool, int scene)
 {
     Il2CppString* nameObject;
-    helper->RunStaticMethod(&nameObject, helper->GetClassFromName("UnityEngine.SceneManagement", "Scene"), "GetNameInternal", &scene);
+    il2cpp_utils::RunMethod(&nameObject, il2cpp_utils::GetClassFromName("UnityEngine.SceneManagement", "Scene"), "GetNameInternal", &scene);
     const char* name = to_utf8(csstrtostr(nameObject)).c_str();
     log(INFO, "Scene: %s", name);
     isInMenu = strcmp(name, "MenuCore") == 0;
@@ -101,54 +97,54 @@ MAKE_HOOK_OFFSETLESS(OVRInput_Update, void)
     bool secondaryThumbstickLeft;
     bool secondaryThumbstickRight;
     int none = 0, active = 0x80000000;
-    helper->RunStaticMethod(&primaryThumbstickUp, helper->GetClassFromName("", "OVRInput"), "GetResolvedButton", &Buttons::PrimaryThumbstickUp, &none, &active);
-    helper->RunStaticMethod(&primaryThumbstickDown, helper->GetClassFromName("", "OVRInput"), "GetResolvedButton", &Buttons::PrimaryThumbstickDown, &none, &active);
-    helper->RunStaticMethod(&primaryThumbstickLeft, helper->GetClassFromName("", "OVRInput"), "GetResolvedButton", &Buttons::PrimaryThumbstickLeft, &none, &active);
-    helper->RunStaticMethod(&primaryThumbstickRight, helper->GetClassFromName("", "OVRInput"), "GetResolvedButton", &Buttons::PrimaryThumbstickRight, &none, &active);
-    helper->RunStaticMethod(&secondaryThumbstickUp, helper->GetClassFromName("", "OVRInput"), "GetResolvedButton", &Buttons::SecondaryThumbstickUp, &none, &active);
-    helper->RunStaticMethod(&secondaryThumbstickDown, helper->GetClassFromName("", "OVRInput"), "GetResolvedButton", &Buttons::SecondaryThumbstickDown, &none, &active);
-    helper->RunStaticMethod(&secondaryThumbstickLeft, helper->GetClassFromName("", "OVRInput"), "GetResolvedButton", &Buttons::SecondaryThumbstickLeft, &none, &active);
-    helper->RunStaticMethod(&secondaryThumbstickRight, helper->GetClassFromName("", "OVRInput"), "GetResolvedButton", &Buttons::SecondaryThumbstickRight, &none, &active);
+    il2cpp_utils::RunMethod(&primaryThumbstickUp, il2cpp_utils::GetClassFromName("", "OVRInput"), "GetResolvedButton", &Buttons::PrimaryThumbstickUp, &none, &active);
+    il2cpp_utils::RunMethod(&primaryThumbstickDown, il2cpp_utils::GetClassFromName("", "OVRInput"), "GetResolvedButton", &Buttons::PrimaryThumbstickDown, &none, &active);
+    il2cpp_utils::RunMethod(&primaryThumbstickLeft, il2cpp_utils::GetClassFromName("", "OVRInput"), "GetResolvedButton", &Buttons::PrimaryThumbstickLeft, &none, &active);
+    il2cpp_utils::RunMethod(&primaryThumbstickRight, il2cpp_utils::GetClassFromName("", "OVRInput"), "GetResolvedButton", &Buttons::PrimaryThumbstickRight, &none, &active);
+    il2cpp_utils::RunMethod(&secondaryThumbstickUp, il2cpp_utils::GetClassFromName("", "OVRInput"), "GetResolvedButton", &Buttons::SecondaryThumbstickUp, &none, &active);
+    il2cpp_utils::RunMethod(&secondaryThumbstickDown, il2cpp_utils::GetClassFromName("", "OVRInput"), "GetResolvedButton", &Buttons::SecondaryThumbstickDown, &none, &active);
+    il2cpp_utils::RunMethod(&secondaryThumbstickLeft, il2cpp_utils::GetClassFromName("", "OVRInput"), "GetResolvedButton", &Buttons::SecondaryThumbstickLeft, &none, &active);
+    il2cpp_utils::RunMethod(&secondaryThumbstickRight, il2cpp_utils::GetClassFromName("", "OVRInput"), "GetResolvedButton", &Buttons::SecondaryThumbstickRight, &none, &active);
     if(isInMenu){
-        Il2CppObject* levelPacksViewController = GetFirstObjectOfType(helper->GetClassFromName("", "LevelPacksViewController"));    
+        Il2CppObject* levelPacksViewController = GetFirstObjectOfType(il2cpp_utils::GetClassFromName("", "LevelPacksViewController"));    
         if(levelPacksViewController != nullptr){        
-            Il2CppObject* levelPacksTableView = helper->GetFieldObjectValue(levelPacksViewController, "_levelPacksTableView");
+            Il2CppObject* levelPacksTableView = il2cpp_utils::GetFieldValue(levelPacksViewController, "_levelPacksTableView");
             if(levelPacksTableView != nullptr){
-                Il2CppObject* tableView = helper->GetFieldObjectValue(levelPacksTableView, "_tableView");
+                Il2CppObject* tableView = il2cpp_utils::GetFieldValue(levelPacksTableView, "_tableView");
                 if(tableView != nullptr){
-                    Il2CppObject* pageUpButton = helper->GetFieldObjectValue(tableView, "_pageUpButton");
-                    Il2CppObject* pageDownButton = helper->GetFieldObjectValue(tableView, "_pageDownButton");
+                    Il2CppObject* pageUpButton = il2cpp_utils::GetFieldValue(tableView, "_pageUpButton");
+                    Il2CppObject* pageDownButton = il2cpp_utils::GetFieldValue(tableView, "_pageDownButton");
                     if((primaryThumbstickLeft && currentTime-LastPrimaryThumbstickLeft > WAIT_TIME) || (secondaryThumbstickLeft && currentTime-LastSecondaryThumbstickLeft > WAIT_TIME)){
                         Il2CppObject* onClick;
-                        helper->RunMethod(&onClick, pageUpButton, "get_onClick");
-                        helper->RunMethod(onClick, "Invoke");
+                        il2cpp_utils::RunMethod(&onClick, pageUpButton, "get_onClick");
+                        il2cpp_utils::RunMethod(onClick, "Invoke");
                     }
                     if((primaryThumbstickRight && currentTime-LastPrimaryThumbstickRight > WAIT_TIME) || (secondaryThumbstickRight && currentTime-LastSecondaryThumbstickRight > WAIT_TIME)){
                         Il2CppObject* onClick;
-                        helper->RunMethod(&onClick, pageDownButton, "get_onClick");
-                        helper->RunMethod(onClick, "Invoke");
+                        il2cpp_utils::RunMethod(&onClick, pageDownButton, "get_onClick");
+                        il2cpp_utils::RunMethod(onClick, "Invoke");
                     }
                 }
             }
             
         }
-        Il2CppObject* levelPackLevelsViewController = GetFirstObjectOfType(helper->GetClassFromName("", "LevelPackLevelsViewController"));    
+        Il2CppObject* levelPackLevelsViewController = GetFirstObjectOfType(il2cpp_utils::GetClassFromName("", "LevelPackLevelsViewController"));    
         if(levelPackLevelsViewController != nullptr){        
-            Il2CppObject* levelPackLevelsTableView = helper->GetFieldObjectValue(levelPackLevelsViewController, "_levelPackLevelsTableView");
+            Il2CppObject* levelPackLevelsTableView = il2cpp_utils::GetFieldValue(levelPackLevelsViewController, "_levelPackLevelsTableView");
             if(levelPackLevelsTableView != nullptr){
-                Il2CppObject* tableView = helper->GetFieldObjectValue(levelPackLevelsTableView, "_tableView");
+                Il2CppObject* tableView = il2cpp_utils::GetFieldValue(levelPackLevelsTableView, "_tableView");
                 if(tableView != nullptr){
-                    Il2CppObject* pageUpButton = helper->GetFieldObjectValue(tableView, "_pageUpButton");
-                    Il2CppObject* pageDownButton = helper->GetFieldObjectValue(tableView, "_pageDownButton");
+                    Il2CppObject* pageUpButton = il2cpp_utils::GetFieldValue(tableView, "_pageUpButton");
+                    Il2CppObject* pageDownButton = il2cpp_utils::GetFieldValue(tableView, "_pageDownButton");
                     if((primaryThumbstickUp && currentTime-LastPrimaryThumbstickUp > WAIT_TIME) || (secondaryThumbstickUp && currentTime-LastSecondaryThumbstickUp > WAIT_TIME)){
                         Il2CppObject* onClick;
-                        helper->RunMethod(&onClick, pageUpButton, "get_onClick");
-                        helper->RunMethod(onClick, "Invoke");
+                        il2cpp_utils::RunMethod(&onClick, pageUpButton, "get_onClick");
+                        il2cpp_utils::RunMethod(onClick, "Invoke");
                     }
                     if((primaryThumbstickDown && currentTime-LastPrimaryThumbstickDown > WAIT_TIME) || (secondaryThumbstickDown && currentTime-LastSecondaryThumbstickDown > WAIT_TIME)){
                         Il2CppObject* onClick;
-                        helper->RunMethod(&onClick, pageDownButton, "get_onClick");
-                        helper->RunMethod(onClick, "Invoke");
+                        il2cpp_utils::RunMethod(&onClick, pageDownButton, "get_onClick");
+                        il2cpp_utils::RunMethod(onClick, "Invoke");
                     }
                 }
             }
@@ -205,26 +201,15 @@ MAKE_HOOK_OFFSETLESS(OVRInput_Update, void)
     }
 }
 
-static void* libil2cpphandle;
-MAKE_HOOK_OFFSETLESS(init_hook, void, const char* domain_name) {
-    dlclose(libil2cpphandle);
-    init_hook(domain_name);
-    
-    INSTALL_HOOK_OFFSETLESS(OVRInput_Update, helper->class_get_method_from_name(helper->GetClassFromName("", "OVRInput"), "Update", 0));
-    INSTALL_HOOK_OFFSETLESS(SceneManager_SetActiveScene, helper->class_get_method_from_name(helper->GetClassFromName("UnityEngine.SceneManagement", "SceneManager"), "SetActiveScene", 1));
-    
-    log(INFO, "Successfully installed SongHelper!");
-}
-
-__attribute__((constructor)) void lib_main()
+extern "C" void load()
 {
     #ifdef __aarch64__
     log(INFO, "Is 64 bit!");
     #endif
     log(INFO, "Starting SongHelper installation...");
-
-    libil2cpphandle = dlopen("/data/app/com.beatgames.beatsaber-1/lib/arm64/libil2cpp.so", RTLD_LOCAL | RTLD_LAZY);
-    helper = new IL2CPP_Helper();
-    helper->Initialize();
-    INSTALL_HOOK_DIRECT(init_hook,  helper->init);
+    il2cpp_functions::Init();
+    INSTALL_HOOK_OFFSETLESS(OVRInput_Update, il2cpp_functions::class_get_method_from_name(il2cpp_utils::GetClassFromName("", "OVRInput"), "Update", 0));
+    INSTALL_HOOK_OFFSETLESS(SceneManager_SetActiveScene, il2cpp_functions::class_get_method_from_name(il2cpp_utils::GetClassFromName("UnityEngine.SceneManagement", "SceneManager"), "SetActiveScene", 1));
+   
+    log(INFO, "Successfully installed SongHelper!");
 }

@@ -120,7 +120,7 @@ void OnChatMessage(IRCMessage message, TwitchIRCClient* client)
     AddChatObject(text);
 }
 
-void ConnectTwitch(){
+void TwitchIRCThread(){
     client = new TwitchIRCClient();
     if (client->InitSocket())
     {
@@ -140,15 +140,7 @@ void ConnectTwitch(){
         }
     }
 }
-
 void OnLoadAssetComplete(Il2CppObject* asset){
-    if(reloadAsset){
-        reloadAsset = false;
-        log(INFO, "Reloading Asset!");
-        UnityAssetLoader::LoadAssetFromAssetBundleAsync(assetBundle, (UnityAssetLoader_OnLoadAssetCompleteFunction*)OnLoadAssetComplete);
-        return;
-    }
-    isLoadingAsset = false;
     il2cpp_utils::RunMethod(&customUIObject, il2cpp_utils::GetClassFromName("UnityEngine", "Object"), "Instantiate", asset);
 
     Il2CppObject* objectTransform;
@@ -175,14 +167,13 @@ void OnLoadAssetComplete(Il2CppObject* asset){
     needUpdate = true;
     if(!threadStarted){
         threadStarted = true;
-        thread testThread(ConnectTwitch);
-        testThread.detach();
+        thread twitchIRCThread(TwitchIRCThread);
+        twitchIRCThread.detach();
     }
 }
 
 void OnLoadAssetBundleComplete(Il2CppObject* assetBundleArg){
     assetBundle = assetBundleArg;
-    isLoadingAsset = true;
     UnityAssetLoader::LoadAssetFromAssetBundleAsync(assetBundle, (UnityAssetLoader_OnLoadAssetCompleteFunction*)OnLoadAssetComplete);
 }
 
@@ -212,12 +203,7 @@ MAKE_HOOK_OFFSETLESS(SceneManager_SetActiveScene, bool, int scene)
         if(assetBundle == nullptr){
             UnityAssetLoader::LoadAssetBundleFromFileAsync("/sdcard/Android/data/com.beatgames.beatsaber/files/uis/chatUI.qui", (UnityAssetLoader_OnLoadAssetBundleCompleteFunction*)OnLoadAssetBundleComplete);
         }else {
-            if(isLoadingAsset){
-                reloadAsset = true;
-            }else{
-                isLoadingAsset = true;
-                UnityAssetLoader::LoadAssetFromAssetBundleAsync(assetBundle, (UnityAssetLoader_OnLoadAssetCompleteFunction*)OnLoadAssetComplete);
-            }
+            UnityAssetLoader::LoadAssetFromAssetBundleAsync(assetBundle, (UnityAssetLoader_OnLoadAssetCompleteFunction*)OnLoadAssetComplete);
         }
     }
     return SceneManager_SetActiveScene(scene);

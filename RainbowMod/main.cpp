@@ -19,8 +19,6 @@
 
 using namespace std;
 
-static IL2CPP_Helper* helper = nullptr;
-
 static rapidjson::Document& config_doc = Configuration::config;
 
 static struct Config_t {
@@ -133,16 +131,12 @@ Color ColorFromHSB(float hue, float saturation, float brightness){
 }
 
 Color GetColorFromManager(Il2CppObject* colorManager, const char* fieldName){
-    Color color;
-    helper->GetFieldValue(&color, helper->GetFieldObjectValue(colorManager, fieldName), "_color");
-    return color; 
+    return il2cpp_utils::GetFieldValue<Color>(il2cpp_utils::GetFieldValue(colorManager, fieldName), "_color");; 
 }
 
 Il2CppObject* GetFirstObjectOfType(Il2CppClass* klass){
-    Il2CppClass* resourcesClass = helper->GetClassFromName("UnityEngine", "Resources");
-    const MethodInfo* resources_FindObjectsOfTypeAllMethod = helper->class_get_method_from_name(resourcesClass, "FindObjectsOfTypeAll", 1);
     Array<Il2CppObject*>* objects;
-    helper->RunMethod(&objects, nullptr, resources_FindObjectsOfTypeAllMethod, helper->type_get_object(helper->class_get_type(klass)));
+    il2cpp_utils::RunMethod(&objects, il2cpp_utils::GetClassFromName("UnityEngine", "Resources"), "FindObjectsOfTypeAll", il2cpp_functions::type_get_object(il2cpp_functions::class_get_type(klass)));
     if (objects != nullptr)
     {
         return objects->values[0];
@@ -158,44 +152,44 @@ void CacheSaber(Il2CppObject* saber){
         if(Config.QSabers){
             vector<Il2CppObject*> materials; 
             bool getInactive = false;
-            Il2CppString* glowString = helper->createcsstr("_Glow");
-            Il2CppString* bloomString = helper->createcsstr("_Bloom");
-            Il2CppClass* shaderClass = helper->GetClassFromName("UnityEngine", "Shader");
-            const MethodInfo* shader_PropertyToIDMethod = helper->class_get_method_from_name(shaderClass, "PropertyToID", 1);
+            Il2CppString* glowString = il2cpp_utils::createcsstr("_Glow");
+            Il2CppString* bloomString = il2cpp_utils::createcsstr("_Bloom");
+            Il2CppClass* shaderClass = il2cpp_utils::GetClassFromName("UnityEngine", "Shader");
+            const MethodInfo* shader_PropertyToIDMethod = il2cpp_functions::class_get_method_from_name(shaderClass, "PropertyToID", 1);
             int glowID, bloomID;
-            helper->RunMethod(&glowID, nullptr, shader_PropertyToIDMethod, glowString);
-            helper->RunMethod(&bloomID, nullptr, shader_PropertyToIDMethod, bloomString);
+            il2cpp_utils::RunMethod(&glowID, nullptr, shader_PropertyToIDMethod, glowString);
+            il2cpp_utils::RunMethod(&bloomID, nullptr, shader_PropertyToIDMethod, bloomString);
             Array<Il2CppObject*>* childTransforms;
-            helper->RunMethod(&childTransforms, saber, "GetComponentsInChildren", helper->type_get_object(helper->class_get_type(helper->GetClassFromName("UnityEngine", "Transform"))), &getInactive);
+            il2cpp_utils::RunMethod(&childTransforms, saber, "GetComponentsInChildren", il2cpp_functions::type_get_object(il2cpp_functions::class_get_type(il2cpp_utils::GetClassFromName("UnityEngine", "Transform"))), &getInactive);
             for (int i= 0; i< childTransforms->Length(); i++)
             {
                 Array<Il2CppObject*>* renderers;
-                helper->RunMethod(&renderers, childTransforms->values[i], "GetComponentsInChildren", helper->type_get_object(helper->class_get_type(helper->GetClassFromName("UnityEngine", "Renderer"))), &getInactive);
+                il2cpp_utils::RunMethod(&renderers, childTransforms->values[i], "GetComponentsInChildren", il2cpp_functions::type_get_object(il2cpp_functions::class_get_type(il2cpp_utils::GetClassFromName("UnityEngine", "Renderer"))), &getInactive);
                 for (int j = 0; j < renderers->Length(); j++)
                 {
                     Array<Il2CppObject*>* sharedMaterials;
-                    helper->RunMethod(&sharedMaterials, renderers->values[j], "get_sharedMaterials");
+                    il2cpp_utils::RunMethod(&sharedMaterials, renderers->values[j], "get_sharedMaterials");
                     for (int h = 0; h < sharedMaterials->Length(); h++)
                     {
                         Il2CppObject* material = sharedMaterials->values[h];
                         bool setColor = false;
                         bool hasGlow;
-                        helper->RunMethod(&hasGlow, material, "HasProperty", &glowID);
+                        il2cpp_utils::RunMethod(&hasGlow, material, "HasProperty", &glowID);
                         if (hasGlow)
                         {
                             float glowFloat;
-                            helper->RunMethod(&glowFloat, material, "GetFloat", &glowID);
+                            il2cpp_utils::RunMethod(&glowFloat, material, "GetFloat", &glowID);
                             if (glowFloat > 0)
                                 setColor = true;
                         }
                         if (!setColor)
                         {
                             bool hasBloom;
-                            helper->RunMethod(&hasBloom, material, "HasProperty", &bloomID);
+                            il2cpp_utils::RunMethod(&hasBloom, material, "HasProperty", &bloomID);
                             if (hasBloom)
                             {
                                 float bloomFloat;
-                                helper->RunMethod(&bloomFloat, material, "GetFloat", &bloomID);
+                                il2cpp_utils::RunMethod(&bloomFloat, material, "GetFloat", &bloomID);
                                 if (bloomFloat > 0)
                                     setColor = true;
                             }
@@ -215,7 +209,7 @@ void CacheSaber(Il2CppObject* saber){
 }
 
 void SetSaberColor(Il2CppObject* saber, Color color){
-    Il2CppString* colorString = helper->createcsstr("_Color");
+    Il2CppString* colorString = il2cpp_utils::createcsstr("_Color");
     map<Il2CppObject*, vector<Il2CppObject*>>::iterator it = sabersMaterials.find(saber);
     if(it == sabersMaterials.end())
     {
@@ -223,7 +217,7 @@ void SetSaberColor(Il2CppObject* saber, Color color){
     }
     for (Il2CppObject* material : sabersMaterials[saber]) 
     {
-        helper->RunMethod(material, "SetColor", colorString, &color);
+        il2cpp_utils::RunMethod(material, "SetColor", colorString, &color);
     }
 }
 
@@ -245,19 +239,19 @@ MAKE_HOOK_OFFSETLESS(ColorManager__SetColorScheme, void, Il2CppObject* self, Col
 }
 
 MAKE_HOOK_OFFSETLESS(SaberManager_Update, void, Il2CppObject* self){
-    Il2CppObject* colorManager = GetFirstObjectOfType(helper->GetClassFromName("", "ColorManager"));
+    Il2CppObject* colorManager = GetFirstObjectOfType(il2cpp_utils::GetClassFromName("", "ColorManager"));
     if (colorManager != nullptr)
     {
         if(!isInTutorial && Config.QSabers){
-            SetSaberColor(helper->GetFieldObjectValue(self, "_leftSaber"), colorScheme.saberAColor);
-            SetSaberColor(helper->GetFieldObjectValue(self, "_rightSaber"), colorScheme.saberBColor);
+            SetSaberColor(il2cpp_utils::GetFieldValue(self, "_leftSaber"), colorScheme.saberAColor);
+            SetSaberColor(il2cpp_utils::GetFieldValue(self, "_rightSaber"), colorScheme.saberBColor);
         }
     }
     SaberManager_Update(self);
 }
 
 MAKE_HOOK_OFFSETLESS(SaberBurnMarkSparkles_LateUpdate, void, Il2CppObject* self, void *type){
-    Il2CppObject* colorManager = helper->GetFieldObjectValue(self, "_colorManager");
+    Il2CppObject* colorManager = il2cpp_utils::GetFieldValue(self, "_colorManager");
     if(colorManager != nullptr){
         if(isInTutorial){
             colorScheme.saberAColor = GetColorFromManager(colorManager, "_saberAColor");
@@ -292,7 +286,7 @@ MAKE_HOOK_OFFSETLESS(SaberBurnMarkSparkles_LateUpdate, void, Il2CppObject* self,
             }
         }
         settingColorScheme = true;
-        helper->RunMethod(colorManager, "SetColorScheme", &colorScheme);
+        il2cpp_utils::RunMethod(colorManager, "SetColorScheme", &colorScheme);
     }
     SaberBurnMarkSparkles_LateUpdate(self, type);
     
@@ -300,11 +294,11 @@ MAKE_HOOK_OFFSETLESS(SaberBurnMarkSparkles_LateUpdate, void, Il2CppObject* self,
 
 MAKE_HOOK_OFFSETLESS(SaberWeaponTrail_get_color, Color, Il2CppObject* self){
     if(!Config.Sabers && Config.Trails){
-        Il2CppObject* saberTypeObject = helper->GetFieldObjectValue(self, "_saberTypeObject");
+        Il2CppObject* saberTypeObject = il2cpp_utils::GetFieldValue(self, "_saberTypeObject");
         int saberType;
-        helper->RunMethod(&saberType, saberTypeObject, "get_saberType"); 
-        Color multiplierSaberColor;
-        helper->GetFieldValue(&multiplierSaberColor, self, "_multiplierSaberColor");
+        il2cpp_utils::RunMethod(&saberType, saberTypeObject, "get_saberType"); 
+        Color multiplierSaberColor = il2cpp_utils::GetFieldValue<Color>(self, "_multiplierSaberColor");
+        
         Color saberColor = saberType == 1 ? ColorFromHSB(saberB, 1.0, 1.0) : ColorFromHSB(saberA, 1.0, 1.0);
 
         saberColor.r = powf(saberColor.r * multiplierSaberColor.r, 2.2f);
@@ -319,41 +313,40 @@ MAKE_HOOK_OFFSETLESS(SaberWeaponTrail_get_color, Color, Il2CppObject* self){
 
 MAKE_HOOK_OFFSETLESS(GameNoteController_Update, void, Il2CppObject* self){
     if(Config.Sabers){
-        Il2CppObject* disappearingArrowController = helper->GetFieldObjectValue(self, "_disappearingArrowController");
-        Il2CppObject* colorNoteVisuals = helper->GetFieldObjectValue(disappearingArrowController, "_colorNoteVisuals");
-        Il2CppObject* noteController = helper->GetFieldObjectValue(colorNoteVisuals, "_noteController");
+        Il2CppObject* disappearingArrowController = il2cpp_utils::GetFieldValue(self, "_disappearingArrowController");
+        Il2CppObject* colorNoteVisuals = il2cpp_utils::GetFieldValue(disappearingArrowController, "_colorNoteVisuals");
+        Il2CppObject* noteController = il2cpp_utils::GetFieldValue(colorNoteVisuals, "_noteController");
         
-        Il2CppObject* noteData = helper->GetFieldObjectValue(noteController, "_noteData");
+        Il2CppObject* noteData = il2cpp_utils::GetFieldValue(noteController, "_noteData");
         int noteType;
-        helper->RunMethod(&noteType, noteData, "get_noteType"); 
+        il2cpp_utils::RunMethod(&noteType, noteData, "get_noteType"); 
 
         Color noteColor;
         
         if(Config.Notes){
             noteColor = noteType == 1 ? colorScheme.saberBColor : colorScheme.saberAColor;
-            helper->SetFieldValue(colorNoteVisuals, "_noteColor", &noteColor); 
+            il2cpp_utils::SetFieldValue(colorNoteVisuals, "_noteColor", &noteColor); 
         }else{
             noteColor = noteType == 1 ? defaultColorScheme.saberBColor : defaultColorScheme.saberAColor;
         } 
         
-        float arrowGlowIntensity;
-        helper->GetFieldValue(&arrowGlowIntensity, colorNoteVisuals, "_arrowGlowIntensity");
+        float arrowGlowIntensity = il2cpp_utils::GetFieldValue<float>(colorNoteVisuals, "_arrowGlowIntensity");
         Color arrowGlowSpriteRendererColor = noteColor;
         arrowGlowSpriteRendererColor.a = arrowGlowIntensity;
-        Il2CppObject* arrowGlowSpriteRenderer = helper->GetFieldObjectValue(colorNoteVisuals, "_arrowGlowSpriteRenderer");
-        helper->RunMethod(arrowGlowSpriteRenderer, "set_color", &arrowGlowSpriteRendererColor); 
-        Il2CppObject* circleGlowSpriteRenderer = helper->GetFieldObjectValue(colorNoteVisuals, "_circleGlowSpriteRenderer");
-        helper->RunMethod(circleGlowSpriteRenderer, "set_color", &noteColor); 
-        Array<Il2CppObject*>* materialPropertyBlockControllers = reinterpret_cast<Array<Il2CppObject*>*>(helper->GetFieldObjectValue(colorNoteVisuals, "_materialPropertyBlockControllers"));
+        Il2CppObject* arrowGlowSpriteRenderer = il2cpp_utils::GetFieldValue(colorNoteVisuals, "_arrowGlowSpriteRenderer");
+        il2cpp_utils::RunMethod(arrowGlowSpriteRenderer, "set_color", &arrowGlowSpriteRendererColor); 
+        Il2CppObject* circleGlowSpriteRenderer = il2cpp_utils::GetFieldValue(colorNoteVisuals, "_circleGlowSpriteRenderer");
+        il2cpp_utils::RunMethod(circleGlowSpriteRenderer, "set_color", &noteColor); 
+        Array<Il2CppObject*>* materialPropertyBlockControllers = reinterpret_cast<Array<Il2CppObject*>*>(il2cpp_utils::GetFieldValue(colorNoteVisuals, "_materialPropertyBlockControllers"));
         
         for(int i = 0;i<materialPropertyBlockControllers->Length();i++){
             Il2CppObject* materialPropertyBlockController = materialPropertyBlockControllers->values[i];
             Il2CppObject* materialPropertyBlock;
-            helper->RunMethod(&materialPropertyBlock, materialPropertyBlockController, "get_materialPropertyBlock"); 
+            il2cpp_utils::RunMethod(&materialPropertyBlock, materialPropertyBlockController, "get_materialPropertyBlock"); 
             Color materialPropertyBlockColor = noteColor;
             materialPropertyBlockColor.a = 1.0f;
-            helper->RunMethod(materialPropertyBlock, "SetColor", helper->createcsstr("_Color"), &materialPropertyBlockColor);
-            helper->RunMethod(materialPropertyBlockController, "ApplyChanges");
+            il2cpp_utils::RunMethod(materialPropertyBlock, "SetColor", il2cpp_utils::createcsstr("_Color"), &materialPropertyBlockColor);
+            il2cpp_utils::RunMethod(materialPropertyBlockController, "ApplyChanges");
         }
     }
     GameNoteController_Update(self);
@@ -361,9 +354,9 @@ MAKE_HOOK_OFFSETLESS(GameNoteController_Update, void, Il2CppObject* self){
 
 MAKE_HOOK_OFFSETLESS(ObstacleController_Update, void, Il2CppObject* self){
     if(Config.Walls){
-        Il2CppObject* stretchableObstacle = helper->GetFieldObjectValue(self, "_stretchableObstacle");
-        float addColorMultiplier;
-        helper->GetFieldValue(&addColorMultiplier, stretchableObstacle, "_addColorMultiplier");
+        Il2CppObject* stretchableObstacle = il2cpp_utils::GetFieldValue(self, "_stretchableObstacle");
+
+        float addColorMultiplier = il2cpp_utils::GetFieldValue<float>(stretchableObstacle, "_addColorMultiplier");
 
         Color color = colorScheme.obstaclesColor;
         Color color2 = color;
@@ -372,21 +365,21 @@ MAKE_HOOK_OFFSETLESS(ObstacleController_Update, void, Il2CppObject* self){
         color2.b *= addColorMultiplier;
         color2.a = 0.0f;
 
-        Il2CppObject* obstacleFrame = helper->GetFieldObjectValue(stretchableObstacle, "_obstacleFrame");
-        helper->SetFieldValue(obstacleFrame, "color", &color); 
-        helper->RunMethod(obstacleFrame, "Refresh");
-        Il2CppObject* obstacleFakeGlow = helper->GetFieldObjectValue(stretchableObstacle, "_obstacleFakeGlow");
-        helper->SetFieldValue(obstacleFakeGlow, "color", &color); 
-        helper->RunMethod(obstacleFakeGlow, "Refresh");
+        Il2CppObject* obstacleFrame = il2cpp_utils::GetFieldValue(stretchableObstacle, "_obstacleFrame");
+        il2cpp_utils::SetFieldValue(obstacleFrame, "color", &color); 
+        il2cpp_utils::RunMethod(obstacleFrame, "Refresh");
+        Il2CppObject* obstacleFakeGlow = il2cpp_utils::GetFieldValue(stretchableObstacle, "_obstacleFakeGlow");
+        il2cpp_utils::SetFieldValue(obstacleFakeGlow, "color", &color); 
+        il2cpp_utils::RunMethod(obstacleFakeGlow, "Refresh");
 
-        Array<Il2CppObject*>* addColorSetters = reinterpret_cast<Array<Il2CppObject*>*>(helper->GetFieldObjectValue(stretchableObstacle, "_addColorSetters"));
+        Array<Il2CppObject*>* addColorSetters = reinterpret_cast<Array<Il2CppObject*>*>(il2cpp_utils::GetFieldValue(stretchableObstacle, "_addColorSetters"));
         for(int i = 0;i<addColorSetters->Length();i++){
-            helper->RunMethod(addColorSetters->values[i], "SetColor", &color2);
+            il2cpp_utils::RunMethod(addColorSetters->values[i], "SetColor", &color2);
         }
 
-        Array<Il2CppObject*>* tintColorSetters = reinterpret_cast<Array<Il2CppObject*>*>(helper->GetFieldObjectValue(stretchableObstacle, "_tintColorSetters"));
+        Array<Il2CppObject*>* tintColorSetters = reinterpret_cast<Array<Il2CppObject*>*>(il2cpp_utils::GetFieldValue(stretchableObstacle, "_tintColorSetters"));
         for(int i = 0;i<tintColorSetters->Length();i++){
-            helper->RunMethod(tintColorSetters->values[i], "SetColor", &color);
+            il2cpp_utils::RunMethod(tintColorSetters->values[i], "SetColor", &color);
         }
     }
     ObstacleController_Update(self);
@@ -397,42 +390,42 @@ void SaveConfig();
 
 void TextSaveClear(){
     sleep(1);
-    helper->RunMethod(textSave, "set_text", helper->createcsstr(""));
+    il2cpp_utils::RunMethod(textSave, "set_text", il2cpp_utils::createcsstr(""));
 }
 
 void ButtonSaveOnClick(Il2CppObject* button){
-    Config.Lights = UnityHelper::GetToggleIsOn(helper, toggleLights);
-    Config.Walls = UnityHelper::GetToggleIsOn(helper, toggleWalls);
-    Config.Sabers = UnityHelper::GetToggleIsOn(helper, toggleSabers);
-    Config.Trails = UnityHelper::GetToggleIsOn(helper, toggleTrails);
-    Config.Notes = UnityHelper::GetToggleIsOn(helper, toggleNotes);
-    Config.QSabers = UnityHelper::GetToggleIsOn(helper, toggleQSabers);
+    Config.Lights = UnityHelper::GetToggleIsOn(toggleLights);
+    Config.Walls = UnityHelper::GetToggleIsOn(toggleWalls);
+    Config.Sabers = UnityHelper::GetToggleIsOn(toggleSabers);
+    Config.Trails = UnityHelper::GetToggleIsOn(toggleTrails);
+    Config.Notes = UnityHelper::GetToggleIsOn(toggleNotes);
+    Config.QSabers = UnityHelper::GetToggleIsOn(toggleQSabers);
     SaveConfig();
-    helper->RunMethod(textSave, "set_text", helper->createcsstr("Saved Configuration!"));
+    il2cpp_utils::RunMethod(textSave, "set_text", il2cpp_utils::createcsstr("Saved Configuration!"));
     std::thread textSaveClearThread(TextSaveClear);
     textSaveClearThread.detach();
 }
 
 void OnLoadAssetComplete(Il2CppObject* asset){
-    helper->RunMethod(&customUIObject, nullptr, helper->class_get_method_from_name(helper->GetClassFromName("UnityEngine", "Object"), "Instantiate", 1), asset);
-    UnityHelper::SetParent(helper, customUIObject, QuestUI::GetQuestUIModInfo().Panel);
+    il2cpp_utils::RunMethod(&customUIObject, nullptr, il2cpp_functions::class_get_method_from_name(il2cpp_utils::GetClassFromName("UnityEngine", "Object"), "Instantiate", 1), asset);
+    UnityHelper::SetParent(customUIObject, QuestUI::GetQuestUIModInfo().Panel);
 
-    UnityHelper::AddButtonOnClick(helper, QuestUI::GetQuestUIInfo()->ButtonBinder, customUIObject, "ButtonSave", (UnityHelper::ButtonOnClickFunction*)ButtonSaveOnClick);
+    UnityHelper::AddButtonOnClick(QuestUI::GetQuestUIInfo()->ButtonBinder, customUIObject, "ButtonSave", (UnityHelper::ButtonOnClickFunction*)ButtonSaveOnClick);
 
-    textSave = UnityHelper::GetComponentInChildren(helper, customUIObject, helper->GetClassFromName("TMPro", "TextMeshProUGUI"), "TextSave");
-    toggleLights = UnityHelper::GetComponentInChildren(helper, customUIObject, helper->GetClassFromName("UnityEngine.UI", "Toggle"), "ToggleLights");
-    toggleWalls = UnityHelper::GetComponentInChildren(helper, customUIObject, helper->GetClassFromName("UnityEngine.UI", "Toggle"), "ToggleWalls");
-    toggleSabers = UnityHelper::GetComponentInChildren(helper, customUIObject, helper->GetClassFromName("UnityEngine.UI", "Toggle"), "ToggleSabers");
-    toggleTrails = UnityHelper::GetComponentInChildren(helper, customUIObject, helper->GetClassFromName("UnityEngine.UI", "Toggle"), "ToggleTrails");
-    toggleNotes = UnityHelper::GetComponentInChildren(helper, customUIObject, helper->GetClassFromName("UnityEngine.UI", "Toggle"), "ToggleNotes");
-    toggleQSabers = UnityHelper::GetComponentInChildren(helper, customUIObject, helper->GetClassFromName("UnityEngine.UI", "Toggle"), "ToggleQSabers");
+    textSave = UnityHelper::GetComponentInChildren(customUIObject, il2cpp_utils::GetClassFromName("TMPro", "TextMeshProUGUI"), "TextSave");
+    toggleLights = UnityHelper::GetComponentInChildren(customUIObject, il2cpp_utils::GetClassFromName("UnityEngine.UI", "Toggle"), "ToggleLights");
+    toggleWalls = UnityHelper::GetComponentInChildren(customUIObject, il2cpp_utils::GetClassFromName("UnityEngine.UI", "Toggle"), "ToggleWalls");
+    toggleSabers = UnityHelper::GetComponentInChildren(customUIObject, il2cpp_utils::GetClassFromName("UnityEngine.UI", "Toggle"), "ToggleSabers");
+    toggleTrails = UnityHelper::GetComponentInChildren(customUIObject, il2cpp_utils::GetClassFromName("UnityEngine.UI", "Toggle"), "ToggleTrails");
+    toggleNotes = UnityHelper::GetComponentInChildren(customUIObject, il2cpp_utils::GetClassFromName("UnityEngine.UI", "Toggle"), "ToggleNotes");
+    toggleQSabers = UnityHelper::GetComponentInChildren(customUIObject, il2cpp_utils::GetClassFromName("UnityEngine.UI", "Toggle"), "ToggleQSabers");
 
-    UnityHelper::SetToggleIsOn(helper, toggleLights, Config.Lights);
-    UnityHelper::SetToggleIsOn(helper, toggleWalls, Config.Walls);
-    UnityHelper::SetToggleIsOn(helper, toggleSabers, Config.Sabers);
-    UnityHelper::SetToggleIsOn(helper, toggleTrails, Config.Trails);
-    UnityHelper::SetToggleIsOn(helper, toggleNotes, Config.Notes);
-    UnityHelper::SetToggleIsOn(helper, toggleQSabers, Config.QSabers);
+    UnityHelper::SetToggleIsOn(toggleLights, Config.Lights);
+    UnityHelper::SetToggleIsOn(toggleWalls, Config.Walls);
+    UnityHelper::SetToggleIsOn(toggleSabers, Config.Sabers);
+    UnityHelper::SetToggleIsOn(toggleTrails, Config.Trails);
+    UnityHelper::SetToggleIsOn(toggleNotes, Config.Notes);
+    UnityHelper::SetToggleIsOn(toggleQSabers, Config.QSabers);
 }
 
 void OnLoadAssetBundleComplete(Il2CppObject* assetBundleArg){
@@ -527,44 +520,31 @@ bool LoadConfig() {
     }
     return false;
 }
-
-static void* libil2cpphandle;
-MAKE_HOOK_OFFSETLESS(init_hook, void, const char* domain_name) {
-    dlclose(libil2cpphandle);
-    init_hook(domain_name);
-    
-    QuestUI::Initialize("Rainbow Mod", QuestUIOnInitialized);
-    
-    Il2CppClass* tutorialControllerClass = helper->GetClassFromName("", "TutorialController");
-    INSTALL_HOOK_OFFSETLESS(TutorialController_Awake, helper->class_get_method_from_name(tutorialControllerClass, "Awake", 0));
-    INSTALL_HOOK_OFFSETLESS(TutorialController_OnDestroy, helper->class_get_method_from_name(tutorialControllerClass, "OnDestroy", 0));
-
-    INSTALL_HOOK_OFFSETLESS(ColorManager__SetColorScheme, helper->class_get_method_from_name(helper->GetClassFromName("", "ColorManager"), "SetColorScheme", 1));
-
-    INSTALL_HOOK_OFFSETLESS(SaberManager_Update, helper->class_get_method_from_name(helper->GetClassFromName("", "SaberManager"), "Update", 0));
-
-    INSTALL_HOOK_OFFSETLESS(SaberBurnMarkSparkles_LateUpdate, helper->class_get_method_from_name(helper->GetClassFromName("", "SaberBurnMarkSparkles"), "LateUpdate", 0));
-        
-    INSTALL_HOOK_OFFSETLESS(SaberWeaponTrail_get_color, helper->class_get_method_from_name(helper->GetClassFromName("", "SaberWeaponTrail"), "get_color", 0));
-    INSTALL_HOOK_OFFSETLESS(GameNoteController_Update, helper->class_get_method_from_name(helper->GetClassFromName("", "GameNoteController"), "Update", 0));
-    INSTALL_HOOK_OFFSETLESS(ObstacleController_Update, helper->class_get_method_from_name(helper->GetClassFromName("", "ObstacleController"), "Update", 0));
-    log(INFO, "Successfully installed Hooks!");
-}
-
-__attribute__((constructor)) void lib_main()
+extern "C" void load()
 {
-    #ifdef __aarch64__
-    log(INFO, "Is 64 bit!");
-    #endif
-
     if(!LoadConfig())
         SaveConfig();
 
     saberB = Config.SabersStartDiff;
     environmentColor1 = Config.LightsStartDiff;
 
-    libil2cpphandle = dlopen("/data/app/com.beatgames.beatsaber-1/lib/arm64/libil2cpp.so", RTLD_LOCAL | RTLD_LAZY);
-    helper = new IL2CPP_Helper();
-    helper->Initialize();
-    INSTALL_HOOK_DIRECT(init_hook, helper->init);
+    log(INFO, "Starting RainbowMod installation...");
+    il2cpp_functions::Init();
+    //QuestUI::Initialize("Rainbow Mod", QuestUIOnInitialized);
+    
+    Il2CppClass* tutorialControllerClass = il2cpp_utils::GetClassFromName("", "TutorialController");
+    INSTALL_HOOK_OFFSETLESS(TutorialController_Awake, il2cpp_functions::class_get_method_from_name(tutorialControllerClass, "Awake", 0));
+    INSTALL_HOOK_OFFSETLESS(TutorialController_OnDestroy, il2cpp_functions::class_get_method_from_name(tutorialControllerClass, "OnDestroy", 0));
+
+    INSTALL_HOOK_OFFSETLESS(ColorManager__SetColorScheme, il2cpp_functions::class_get_method_from_name(il2cpp_utils::GetClassFromName("", "ColorManager"), "SetColorScheme", 1));
+
+    INSTALL_HOOK_OFFSETLESS(SaberManager_Update, il2cpp_functions::class_get_method_from_name(il2cpp_utils::GetClassFromName("", "SaberManager"), "Update", 0));
+
+    INSTALL_HOOK_OFFSETLESS(SaberBurnMarkSparkles_LateUpdate, il2cpp_functions::class_get_method_from_name(il2cpp_utils::GetClassFromName("", "SaberBurnMarkSparkles"), "LateUpdate", 0));
+        
+    INSTALL_HOOK_OFFSETLESS(SaberWeaponTrail_get_color, il2cpp_functions::class_get_method_from_name(il2cpp_utils::GetClassFromName("", "SaberWeaponTrail"), "get_color", 0));
+    INSTALL_HOOK_OFFSETLESS(GameNoteController_Update, il2cpp_functions::class_get_method_from_name(il2cpp_utils::GetClassFromName("", "GameNoteController"), "Update", 0));
+    INSTALL_HOOK_OFFSETLESS(ObstacleController_Update, il2cpp_functions::class_get_method_from_name(il2cpp_utils::GetClassFromName("", "ObstacleController"), "Update", 0));
+
+    log(INFO, "Successfully installed RainbowMod!");
 }

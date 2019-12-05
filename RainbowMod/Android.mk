@@ -36,6 +36,6 @@ LOCAL_MODULE    := rainbowmod
 LOCAL_CPPFLAGS := -std=c++2a 
 
 #LOCAL_SHARED_LIBRARIES := testil2cpp
-LOCAL_SRC_FILES :=  main.cpp ../beatsaber-hook/shared/inline-hook/And64InlineHook.cpp ../beatsaber-hook/shared/inline-hook/inlineHook.c ../beatsaber-hook/shared/inline-hook/relocate.c ../beatsaber-hook/shared/utils/il2cpp-helper.cpp ../beatsaber-hook/shared/utils/utils.cpp ../beatsaber-hook/shared/utils/config-utils.cpp ../questui/unityasset-loader.cpp ../questui/questui.cpp ../questui/unity-helper.cpp
+LOCAL_SRC_FILES :=  main.cpp ../beatsaber-hook/shared/inline-hook/And64InlineHook.cpp ../beatsaber-hook/shared/inline-hook/inlineHook.c ../beatsaber-hook/shared/inline-hook/relocate.c ../beatsaber-hook/shared/utils/il2cpp-utils.cpp ../beatsaber-hook/shared/utils/il2cpp-functions.cpp ../beatsaber-hook/shared/utils/utils.cpp ../beatsaber-hook/shared/utils/config-utils.cpp ../questui/unityasset-loader.cpp ../questui/questui.cpp ../questui/unity-helper.cpp
 #LOCAL_STATIC_LIBRARIES := libhook
 include $(BUILD_SHARED_LIBRARY)

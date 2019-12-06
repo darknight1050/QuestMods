@@ -1,0 +1,8 @@
+*/obj/*
+*.so
+*.jar
+.vs
+SongHelper.json
+SongHelper.zip
+lan connect fast.bat
+

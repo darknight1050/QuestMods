@@ -1,14 +1,9 @@
-#include <android/log.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h> 
 #include <fcntl.h>
 #include <wchar.h>
-#include <unistd.h>
-#include <dirent.h>
-#include <linux/limits.h>
-#include <sys/sendfile.h>
 #include <sys/stat.h>
 #include <map>
 #include <vector>
@@ -131,7 +126,7 @@ Color ColorFromHSB(float hue, float saturation, float brightness){
 }
 
 Color GetColorFromManager(Il2CppObject* colorManager, const char* fieldName){
-    return il2cpp_utils::GetFieldValue<Color>(il2cpp_utils::GetFieldValue(colorManager, fieldName), "_color");; 
+    return il2cpp_utils::GetFieldValueUnsafe<Color>(il2cpp_utils::GetFieldValue(colorManager, fieldName), "_color");; 
 }
 
 Il2CppObject* GetFirstObjectOfType(Il2CppClass* klass){
@@ -297,7 +292,7 @@ MAKE_HOOK_OFFSETLESS(SaberWeaponTrail_get_color, Color, Il2CppObject* self){
         Il2CppObject* saberTypeObject = il2cpp_utils::GetFieldValue(self, "_saberTypeObject");
         int saberType;
         il2cpp_utils::RunMethod(&saberType, saberTypeObject, "get_saberType"); 
-        Color multiplierSaberColor = il2cpp_utils::GetFieldValue<Color>(self, "_multiplierSaberColor");
+        Color multiplierSaberColor = il2cpp_utils::GetFieldValueUnsafe<Color>(self, "_multiplierSaberColor");
         
         Color saberColor = saberType == 1 ? ColorFromHSB(saberB, 1.0, 1.0) : ColorFromHSB(saberA, 1.0, 1.0);
 
@@ -330,7 +325,7 @@ MAKE_HOOK_OFFSETLESS(GameNoteController_Update, void, Il2CppObject* self){
             noteColor = noteType == 1 ? defaultColorScheme.saberBColor : defaultColorScheme.saberAColor;
         } 
         
-        float arrowGlowIntensity = il2cpp_utils::GetFieldValue<float>(colorNoteVisuals, "_arrowGlowIntensity");
+        float arrowGlowIntensity = il2cpp_utils::GetFieldValueUnsafe<float>(colorNoteVisuals, "_arrowGlowIntensity");
         Color arrowGlowSpriteRendererColor = noteColor;
         arrowGlowSpriteRendererColor.a = arrowGlowIntensity;
         Il2CppObject* arrowGlowSpriteRenderer = il2cpp_utils::GetFieldValue(colorNoteVisuals, "_arrowGlowSpriteRenderer");
@@ -356,7 +351,7 @@ MAKE_HOOK_OFFSETLESS(ObstacleController_Update, void, Il2CppObject* self){
     if(Config.Walls){
         Il2CppObject* stretchableObstacle = il2cpp_utils::GetFieldValue(self, "_stretchableObstacle");
 
-        float addColorMultiplier = il2cpp_utils::GetFieldValue<float>(stretchableObstacle, "_addColorMultiplier");
+        float addColorMultiplier = il2cpp_utils::GetFieldValueUnsafe<float>(stretchableObstacle, "_addColorMultiplier");
 
         Color color = colorScheme.obstaclesColor;
         Color color2 = color;
@@ -407,7 +402,7 @@ void ButtonSaveOnClick(Il2CppObject* button){
 }
 
 void OnLoadAssetComplete(Il2CppObject* asset){
-    il2cpp_utils::RunMethod(&customUIObject, nullptr, il2cpp_functions::class_get_method_from_name(il2cpp_utils::GetClassFromName("UnityEngine", "Object"), "Instantiate", 1), asset);
+    il2cpp_utils::RunMethod(&customUIObject, nullptr, il2cpp_utils::GetMethod("UnityEngine", "Object", "Instantiate", 1), asset);
     UnityHelper::SetParent(customUIObject, QuestUI::GetQuestUIModInfo().Panel);
 
     UnityHelper::AddButtonOnClick(QuestUI::GetQuestUIInfo()->ButtonBinder, customUIObject, "ButtonSave", (UnityHelper::ButtonOnClickFunction*)ButtonSaveOnClick);
@@ -532,19 +527,18 @@ extern "C" void load()
     il2cpp_functions::Init();
     //QuestUI::Initialize("Rainbow Mod", QuestUIOnInitialized);
     
-    Il2CppClass* tutorialControllerClass = il2cpp_utils::GetClassFromName("", "TutorialController");
-    INSTALL_HOOK_OFFSETLESS(TutorialController_Awake, il2cpp_functions::class_get_method_from_name(tutorialControllerClass, "Awake", 0));
-    INSTALL_HOOK_OFFSETLESS(TutorialController_OnDestroy, il2cpp_functions::class_get_method_from_name(tutorialControllerClass, "OnDestroy", 0));
+    INSTALL_HOOK_OFFSETLESS(TutorialController_Awake, il2cpp_utils::GetMethod("", "TutorialController", "Awake", 0));
+    INSTALL_HOOK_OFFSETLESS(TutorialController_OnDestroy, il2cpp_utils::GetMethod("", "TutorialController", "OnDestroy", 0));
 
-    INSTALL_HOOK_OFFSETLESS(ColorManager__SetColorScheme, il2cpp_functions::class_get_method_from_name(il2cpp_utils::GetClassFromName("", "ColorManager"), "SetColorScheme", 1));
+    INSTALL_HOOK_OFFSETLESS(ColorManager__SetColorScheme, il2cpp_utils::GetMethod("", "ColorManager", "SetColorScheme", 1));
 
-    INSTALL_HOOK_OFFSETLESS(SaberManager_Update, il2cpp_functions::class_get_method_from_name(il2cpp_utils::GetClassFromName("", "SaberManager"), "Update", 0));
+    INSTALL_HOOK_OFFSETLESS(SaberManager_Update, il2cpp_utils::GetMethod("", "SaberManager", "Update", 0));
 
-    INSTALL_HOOK_OFFSETLESS(SaberBurnMarkSparkles_LateUpdate, il2cpp_functions::class_get_method_from_name(il2cpp_utils::GetClassFromName("", "SaberBurnMarkSparkles"), "LateUpdate", 0));
+    INSTALL_HOOK_OFFSETLESS(SaberBurnMarkSparkles_LateUpdate, il2cpp_utils::GetMethod("", "SaberBurnMarkSparkles", "LateUpdate", 0));
         
-    INSTALL_HOOK_OFFSETLESS(SaberWeaponTrail_get_color, il2cpp_functions::class_get_method_from_name(il2cpp_utils::GetClassFromName("", "SaberWeaponTrail"), "get_color", 0));
-    INSTALL_HOOK_OFFSETLESS(GameNoteController_Update, il2cpp_functions::class_get_method_from_name(il2cpp_utils::GetClassFromName("", "GameNoteController"), "Update", 0));
-    INSTALL_HOOK_OFFSETLESS(ObstacleController_Update, il2cpp_functions::class_get_method_from_name(il2cpp_utils::GetClassFromName("", "ObstacleController"), "Update", 0));
+    INSTALL_HOOK_OFFSETLESS(SaberWeaponTrail_get_color, il2cpp_utils::GetMethod("", "SaberWeaponTrail", "get_color", 0));
+    INSTALL_HOOK_OFFSETLESS(GameNoteController_Update, il2cpp_utils::GetMethod("", "GameNoteController", "Update", 0));
+    INSTALL_HOOK_OFFSETLESS(ObstacleController_Update, il2cpp_utils::GetMethod("", "ObstacleController", "Update", 0));
 
     log(INFO, "Successfully installed RainbowMod!");
 }

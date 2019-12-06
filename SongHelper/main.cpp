@@ -208,8 +208,8 @@ extern "C" void load()
     #endif
     log(INFO, "Starting SongHelper installation...");
     il2cpp_functions::Init();
-    INSTALL_HOOK_OFFSETLESS(OVRInput_Update, il2cpp_functions::class_get_method_from_name(il2cpp_utils::GetClassFromName("", "OVRInput"), "Update", 0));
-    INSTALL_HOOK_OFFSETLESS(SceneManager_SetActiveScene, il2cpp_functions::class_get_method_from_name(il2cpp_utils::GetClassFromName("UnityEngine.SceneManagement", "SceneManager"), "SetActiveScene", 1));
+    INSTALL_HOOK_OFFSETLESS(OVRInput_Update, il2cpp_utils::GetMethod("", "OVRInput", "Update", 0));
+    INSTALL_HOOK_OFFSETLESS(SceneManager_SetActiveScene, il2cpp_utils::GetMethod("UnityEngine.SceneManagement", "SceneManager", "SetActiveScene", 1));
    
     log(INFO, "Successfully installed SongHelper!");
 }

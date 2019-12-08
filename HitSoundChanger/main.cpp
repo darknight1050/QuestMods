@@ -110,15 +110,13 @@ void BadHitSoundAudioClipCreateRequestComplete()
 		if (objects != nullptr)
 		{
 			for(int i = 0;i<objects->Length();i++){
-				log(DEBUG, "Setting _badCutRandomSoundPicker object! (BadHitSoundAudioClipCreateRequestComplete)");
+				log(DEBUG, "Setting BadHitSoundAudioClips! (BadHitSoundAudioClipCreateRequestComplete)");
+				if (!il2cpp_utils::SetFieldValue(objects->values[i], "_badCutSoundEffectAudioClips", BadHitSoundAudioClips))
+				{
+					log(ERROR, "Couldn't set _badCutSoundEffectAudioClips");
+				}
 				Il2CppObject* badCutRandomSoundPicker = il2cpp_utils::GetFieldValue(objects->values[i], "_badCutRandomSoundPicker");
-				if(badCutRandomSoundPicker == nullptr){
-					log(ERROR, "_badCutRandomSoundPicker is null Setting _badCutSoundEffectAudioClips! (BadHitSoundAudioClipCreateRequestComplete)");
-					if (!il2cpp_utils::SetFieldValue(objects->values[i], "_badCutSoundEffectAudioClips", BadHitSoundAudioClips))
-					{
-						log(ERROR, "Couldn't set _badCutSoundEffectAudioClips");
-					}
-				} else {
+				if(badCutRandomSoundPicker != nullptr){
 					if (!il2cpp_utils::SetFieldValue(badCutRandomSoundPicker, "_objects", BadHitSoundAudioClips))
 					{
 						log(ERROR, "Couldn't set _badCutRandomSoundPicker");
@@ -179,15 +177,13 @@ MAKE_HOOK_OFFSETLESS(NoteCutSoundEffect_Awake, void, Il2CppObject *self)
 {
 	NoteCutSoundEffect_Awake(self);
 	if(BadHitSoundAudioClips != nullptr){
-		log(DEBUG, "Setting _badCutRandomSoundPicker object! (NoteCutSoundEffect_Awake)");
+		log(DEBUG, "Setting BadHitSoundAudioClips! (NoteCutSoundEffect_Awake)");
+		if (!il2cpp_utils::SetFieldValue(self, "_badCutSoundEffectAudioClips", BadHitSoundAudioClips))
+		{
+			log(ERROR, "Couldn't set _badCutSoundEffectAudioClips");
+		}
 		Il2CppObject* badCutRandomSoundPicker = il2cpp_utils::GetFieldValue(self, "_badCutRandomSoundPicker");
-		if(badCutRandomSoundPicker == nullptr){
-			log(ERROR, "_badCutRandomSoundPicker is null set _badCutSoundEffectAudioClips! (NoteCutSoundEffect_Awake)");
-			if (!il2cpp_utils::SetFieldValue(self, "_badCutSoundEffectAudioClips", BadHitSoundAudioClips))
-			{
-				log(ERROR, "Couldn't set _badCutSoundEffectAudioClips");
-			}
-		} else {
+		if(badCutRandomSoundPicker != nullptr){
 			if (!il2cpp_utils::SetFieldValue(badCutRandomSoundPicker, "_objects", BadHitSoundAudioClips))
 			{
 				log(ERROR, "Couldn't set _badCutRandomSoundPicker");
@@ -198,9 +194,11 @@ MAKE_HOOK_OFFSETLESS(NoteCutSoundEffect_Awake, void, Il2CppObject *self)
 
 MAKE_HOOK_OFFSETLESS(SceneManager_SetActiveScene, bool, int scene)
 {
+    HitSoundAudioClips = nullptr;
     BadHitSoundAudioClips = nullptr;
     return SceneManager_SetActiveScene(scene);
 }
+
 extern "C" void load()
 {
 	il2cpp_functions::Init();
@@ -209,5 +207,4 @@ extern "C" void load()
 	INSTALL_HOOK_OFFSETLESS(NoteCutSoundEffectManager_Start, il2cpp_utils::GetMethod("", "NoteCutSoundEffectManager", "Start", 0));
 	INSTALL_HOOK_OFFSETLESS(SceneManager_SetActiveScene, il2cpp_utils::GetMethod("UnityEngine.SceneManagement", "SceneManager", "SetActiveScene", 1));
    	log(INFO, "Installed HitSoundChanger!");
-	
 }

@@ -31,7 +31,7 @@ LOCAL_MODULE := hook
 #LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/../include
 include $(CLEAR_VARS)
 LOCAL_LDLIBS := -llog
-LOCAL_CFLAGS    := -DMOD_ID='"SongHelper"' -DVERSION='"0.0.2"'
+LOCAL_CFLAGS    := -DMOD_ID='"SongHelper"' -DVERSION='"0.0.3"'
 LOCAL_MODULE    := songhelper
 LOCAL_CPPFLAGS := -std=c++2a 
 

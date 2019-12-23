@@ -198,7 +198,7 @@ MAKE_HOOK_OFFSETLESS(SceneManager_SetActiveScene, bool, int scene)
     il2cpp_utils::RunMethod(&nameObject, il2cpp_utils::GetClassFromName("UnityEngine.SceneManagement", "Scene"), "GetNameInternal", &scene);
     const char* name = to_utf8(csstrtostr(nameObject)).c_str();
     log(INFO, "Scene: %s", name);
-    isInMenu = strcmp(name, "MenuCore") == 0;
+    isInMenu = strcmp(name, "MenuViewControllers") == 0;
     if(isInMenu || strcmp(name, "GameCore") == 0) {
         if(assetBundle == nullptr){
             UnityAssetLoader::LoadAssetBundleFromFileAsync("/sdcard/Android/data/com.beatgames.beatsaber/files/uis/chatUI.qui", (UnityAssetLoader_OnLoadAssetBundleCompleteFunction*)OnLoadAssetBundleComplete);

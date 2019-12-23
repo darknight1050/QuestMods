@@ -31,12 +31,13 @@ Il2CppObject* GetFirstObjectOfType(Il2CppClass* klass){
 
 MAKE_HOOK_OFFSETLESS(SceneManager_SetActiveScene, bool, int scene)
 {
+    bool value = SceneManager_SetActiveScene(scene);
     Il2CppString* nameObject;
     il2cpp_utils::RunMethod(&nameObject, il2cpp_utils::GetClassFromName("UnityEngine.SceneManagement", "Scene"), "GetNameInternal", &scene);
     const char* name = to_utf8(csstrtostr(nameObject)).c_str();
     log(INFO, "Scene: %s", name);
     isInMenu = strcmp(name, "MenuViewControllers") == 0;
-    return SceneManager_SetActiveScene(scene);
+    return value;
 }
 
 void UpdateThread()
@@ -57,18 +58,22 @@ void UpdateThread()
                 if(levelCollectionTableView != nullptr){
                     Il2CppObject* tableView = il2cpp_utils::GetFieldValue(levelCollectionTableView, "_tableView");
                     if(tableView != nullptr){
-                        Il2CppObject* pageUpButton = il2cpp_utils::GetFieldValue(tableView, "_pageUpButton");
-                        Il2CppObject* pageDownButton = il2cpp_utils::GetFieldValue(tableView, "_pageDownButton");
                         if(thumbstickVertical < -0.5f && currentTime-LastThumbstickVertical > WAIT_TIME){
-                            Il2CppObject* onClick;
-                            il2cpp_utils::RunMethod(&onClick, pageUpButton, "get_onClick");
-                            il2cpp_utils::RunMethod(onClick, "Invoke");
+                            Il2CppObject* pageUpButton = il2cpp_utils::GetFieldValue(tableView, "_pageUpButton");
+                            if(pageUpButton != nullptr){
+                                Il2CppObject* onClick;
+                                il2cpp_utils::RunMethod(&onClick, pageUpButton, "get_onClick");
+                                il2cpp_utils::RunMethod(onClick, "Invoke");
+                            }
                             LastThumbstickVertical = currentTime;
                         }else
                         if(thumbstickVertical > 0.5f && currentTime-LastThumbstickVertical > WAIT_TIME){
-                            Il2CppObject* onClick;
-                            il2cpp_utils::RunMethod(&onClick, pageDownButton, "get_onClick");
-                            il2cpp_utils::RunMethod(onClick, "Invoke");
+                            Il2CppObject* pageDownButton = il2cpp_utils::GetFieldValue(tableView, "_pageDownButton");
+                            if(pageDownButton != nullptr){
+                                Il2CppObject* onClick;
+                                il2cpp_utils::RunMethod(&onClick, pageDownButton, "get_onClick");
+                                il2cpp_utils::RunMethod(onClick, "Invoke");
+                            }
                             LastThumbstickVertical = currentTime;
                         }else if(thumbstickVertical == 0.0f){
                             LastThumbstickVertical = 0;

@@ -113,7 +113,7 @@ void OnChatMessage(IRCMessage message, TwitchIRCClient* client)
         if(name.compare(message.prefix.nick) == 0)
             return;
     if(usersColorCache.find(message.prefix.nick) == usersColorCache.end()){
-            usersColorCache.insert(pair<string, string>(message.prefix.nick, int_to_hex(rand() % 0x1000000, 6)));
+        usersColorCache.insert(pair<string, string>(message.prefix.nick, int_to_hex(rand() % 0x1000000, 6)));
     }
     string text = "<color=" + usersColorCache[message.prefix.nick] + ">" + message.prefix.nick + "</color>: " + message.parameters.at(message.parameters.size() - 1);
     log(INFO, "Twitch Chat: %s", text.c_str());
@@ -276,7 +276,9 @@ bool LoadConfig() {
     bool foundEverything = true;
     if(config_doc.HasMember("Nick") && config_doc["Nick"].IsString()){
         char* buffer = (char*)malloc(config_doc["Nick"].GetStringLength());
-        strcpy(buffer, config_doc["Nick"].GetString());
+        string data = string(config_doc["Nick"].GetString());
+        transform(data.begin(), data.end(), data.begin(), [](unsigned char c){ return tolower(c); });
+        strcpy(buffer, data.c_str());
         Config.Nick = buffer; 
     }else{
         foundEverything = false;
@@ -290,8 +292,10 @@ bool LoadConfig() {
     }
     if(config_doc.HasMember("Channel") && config_doc["Channel"].IsString()){
         char* buffer = (char*)malloc(config_doc["Channel"].GetStringLength());
-        strcpy(buffer, config_doc["Channel"].GetString());
-        Config.Channel = buffer; 
+        string data = string(config_doc["Channel"].GetString());
+        transform(data.begin(), data.end(), data.begin(), [](unsigned char c){ return tolower(c); });
+        strcpy(buffer, data.c_str());
+        Config.Channel = buffer;
     }else{
         foundEverything = false;
     }
